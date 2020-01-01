@@ -101,10 +101,7 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
     @dbus.service.method("org.freedesktop.Secret.Service", "s", "o")
     def ReadAlias(self, alias):
         path = self.db.resolve_alias(alias)
-        if path is None:
-            return NullObject
-        else:
-            return dbus.ObjectPath(path)
+        return dbus.ObjectPath(path or NullObject)
 
     @dbus.service.method("org.freedesktop.Secret.Service", "so", "")
     def SetAlias(self, alias, collection):
