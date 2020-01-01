@@ -82,6 +82,9 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
             bus_path = self.service.make_bus_path(True, SecretServiceItemFallback)
             self.service.db.add_item(bus_path, label, attrs, sec_data, sec_type)
             self.ItemCreated(bus_path)
+            self.PropertiesChanged("org.freedesktop.Secret.Collection",
+                                   {"Items": self.get_items()},
+                                   [])
 
         return (dbus.ObjectPath(bus_path), NullObject)
 
