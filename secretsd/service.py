@@ -1,8 +1,10 @@
+from collections import defaultdict
 import dbus
 import dbus.service
 import time
 
 from .collection import SecretServiceCollection
+from .exception import *
 from .item import SecretServiceItemFallback
 from .session import SecretServiceSession
 from .util import BusObjectWithProperties, NullObject

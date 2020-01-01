@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from collections import defaultdict
 import dbus
 import dbus.mainloop.glib
 from gi.repository import GLib
@@ -8,7 +7,6 @@ import os
 import xdg.BaseDirectory
 
 from .database import SecretsDatabase
-from .exception import *
 from .service import SecretService
 
 os.umask(0o077)
