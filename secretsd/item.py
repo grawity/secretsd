@@ -47,7 +47,6 @@ class SecretServiceItemFallback(dbus.service.FallbackObject, BusObjectWithProper
         return dbus.UInt64(meta[2])
 
     INTERFACE = "org.freedesktop.Secret.Item"
-
     PROPERTIES = {
         "Attributes":   (get_attributes,    set_attributes, None),
         "Created":      (get_created,       None,           None),

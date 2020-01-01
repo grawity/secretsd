@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import dbus
 import dbus.mainloop.glib
 from gi.repository import GLib

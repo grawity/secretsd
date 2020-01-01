@@ -36,8 +36,9 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
             "org.freedesktop.Secret.Collection.Label": "Default keyring",
         })
 
-    def get_collections(self, path):
-        collections = self.db.list_collections()
+    def get_collections(self, path=None):
+        #collections = self.db.list_collections()
+        collections = self.collections.keys()
         return dbus.Array(collections, "o")
 
     def load_collections(self):
@@ -64,7 +65,6 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         col = self.make_object(None, True, SecretServiceCollection, properties)
         col.created = int(time.time())
         col.modified = int(time.time())
-        print("create_collection(%r) made path %r" % (alias, col))
         self.db.add_collection(col.bus_path, properties)
         self.path_objects[col.bus_path] = col
         self.collections[col.bus_path] = col
