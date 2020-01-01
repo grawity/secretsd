@@ -11,11 +11,9 @@ class SecretsDatabase():
         cur.execute("CREATE TABLE IF NOT EXISTS sequence" \
                     " (next INTEGER)")
         cur.execute("CREATE TABLE IF NOT EXISTS collections" \
-                    " (object TEXT, created INTEGER, modified INTEGER)")
+                    " (object TEXT, label TEXT, created INTEGER, modified INTEGER)")
         cur.execute("CREATE TABLE IF NOT EXISTS aliases" \
                     " (alias TEXT, target TEXT)")
-        cur.execute("CREATE TABLE IF NOT EXISTS collectionprops" \
-                    " (object TEXT, property TEXT, value TEXT)")
         cur.execute("CREATE TABLE IF NOT EXISTS items" \
                     " (object TEXT, label TEXT, created INTEGER, modified INTEGER)")
         cur.execute("CREATE TABLE IF NOT EXISTS attributes" \
@@ -40,13 +38,11 @@ class SecretsDatabase():
 
     # Collections
 
-    def add_collection(self, object, props):
+    def add_collection(self, object, label):
         print("DB: adding collection %r with props %r" % (object, props))
         now = int(time.time())
         cur = self.db.cursor()
-        cur.execute("INSERT INTO collections VALUES (?,?,?)", (object, now, now))
-        for key, val in props.items():
-            cur.execute("INSERT INTO collectionprops VALUES (?,?,?)", (object, key, val))
+        cur.execute("INSERT INTO collections VALUES (?,?,?,?)", (object, label, now, now))
         self.db.commit()
 
     def list_collections(self):
@@ -60,24 +56,16 @@ class SecretsDatabase():
     def get_collection_metadata(self, object):
         print("DB: getting collection metadata for %r" % (object,))
         cur = self.db.cursor()
-        cur.execute("SELECT created, modified FROM collections WHERE object = ?",
+        cur.execute("SELECT label, created, modified FROM collections WHERE object = ?",
                     (object,))
         return cur.fetchone()
 
-    def get_collection_properties(self, object):
-        print("DB: getting properties for collection %r" % (object,))
-        cur = self.db.cursor()
-        cur.execute("SELECT property, value FROM collectionprops WHERE object = ?", (object,))
-        return {k: v for k, v in cur.fetchall()}
-
-    def set_collection_properties(self, object, props):
-        print("DB: setting properties for %r to %r" % (object, props))
+    def set_collection_metadata_label(self, object, label):
+        print("DB: setting label for %r to %r" % (object, label))
         now = int(time.time())
         cur = self.db.cursor()
-        cur.execute("DELETE FROM collectionprops WHERE object = ?", (object,))
-        for key, val in props.items():
-            cur.execute("INSERT INTO collectionprops VALUES (?,?,?)", (object, key, val))
-        cur.execute("UPDATE collections SET modified = ? WHERE object = ?", (now, object))
+        cur.execute("UPDATE collections SET label = ?, modified = ? WHERE object = ?",
+                    (label, now, object))
         self.db.commit()
 
     def delete_collection(self, object):
@@ -88,7 +76,6 @@ class SecretsDatabase():
         cur.execute("DELETE FROM secrets WHERE object IN (" + subquery + ")", (object,))
         cur.execute("DELETE FROM attributes WHERE object IN (" + subquery + ")", (object,))
         cur.execute("DELETE FROM aliases WHERE target = ?", (object,))
-        cur.execute("DELETE FROM collectionprops WHERE object = ?", (object,))
         cur.execute("DELETE FROM collections WHERE object = ?", (object,))
         self.db.commit()
 

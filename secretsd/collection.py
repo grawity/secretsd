@@ -30,26 +30,23 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
 
     def get_label(self, path):
         path = self.resolve_path(path)
-        props = self.service.db.get_collection_properties(path)
-        label = props["org.freedesktop.Secret.Collection.Label"]
-        return dbus.String(label)
+        meta = self.service.db.get_collection_metadata(path)
+        return dbus.String(meta[0])
 
     def set_label(self, path, value):
         path = self.resolve_path(path)
         label = str(value)
-        self.service.db.set_collection_properties(path, {
-            "org.freedesktop.Secret.Collection.Label": label,
-        })
+        self.service.db.set_collection_metadata_label(path, label)
 
     def get_created(self, path):
         path = self.resolve_path(path)
-        crtime, mtime = self.service.db.get_collection_metadata(path)
-        return dbus.UInt64(crtime)
+        meta = self.service.db.get_collection_metadata(path)
+        return dbus.UInt64(meta[1])
 
     def get_modified(self, path):
         path = self.resolve_path(path)
-        crtime, mtime = self.service.db.get_collection_metadata(path)
-        return dbus.UInt64(mtime)
+        meta = self.service.db.get_collection_metadata(path)
+        return dbus.UInt64(meta[2])
 
     INTERFACE = "org.freedesktop.Secret.Collection"
     PROPERTIES = {
