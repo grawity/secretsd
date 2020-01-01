@@ -155,6 +155,12 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         if collection not in self.collections:
             raise dbus.DBusException("Collection with path %r not found" % (str(collection),),
                                      name="org.freedesktop.DBus.Error.InvalidArgs")
+        old = self.db.resolve_alias(alias)
+        if old:
+            col = self.collections[old]
+            col.remove_from_connection(self.bus, self.make_alias_path(alias))
+        col = self.collections[collection]
+        col.add_to_connection(self.bus, self.make_alias_path(alias))
         self.db.add_alias(alias, collection)
 
     @dbus.service.method("org.freedesktop.Secret.Service", "a{ss}", "aoao")
