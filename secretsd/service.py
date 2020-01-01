@@ -40,7 +40,7 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
                 return dbus.ObjectPath(path)
 
         label = properties["org.freedesktop.Secret.Collection.Label"]
-        bus_path = self.service.make_bus_path(True, SecretServiceCollectionFallback)
+        bus_path = self.make_bus_path(True, SecretServiceCollectionFallback)
         self.db.add_collection(bus_path, label)
         if alias:
             self.db.add_alias(alias, bus_path)
