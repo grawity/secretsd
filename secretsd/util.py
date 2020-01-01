@@ -8,15 +8,6 @@ NullObject = dbus.ObjectPath("/")
 def encode_path_component(value):
     return "".join([c if c.isalnum() else "_%02x" % ord(c) for c in value])
 
-class Counter():
-    def __init__(self, start):
-        self.value = start
-
-    def increment(self):
-        v = self.value
-        self.value += 1
-        return v
-
 class BusObjectWithProperties():
     PROPERTIES = {}
 
