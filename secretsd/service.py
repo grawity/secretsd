@@ -1,5 +1,6 @@
 from collections import defaultdict
 import dbus
+import dbus.lowlevel
 import dbus.service
 import time
 
@@ -58,6 +59,11 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
             for path in self.client_objects[sender]:
                 del self.path_objects[path]
             del self.client_objects[sender]
+
+    def send_signal(self, path, interface, member, signature, *args):
+        msg = dbus.lowlevel.SignalMessage(path, interface, member)
+        msg.append(*args, signature=signature)
+        self.bus.send_message(msg)
 
     ## bus methods
 
