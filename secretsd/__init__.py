@@ -10,6 +10,7 @@ import time
 import xdg.BaseDirectory
 
 from .database import SecretsDatabase
+from .exception import *
 from .session import SecretServiceSession
 
 NullObject = dbus.ObjectPath("/")
@@ -25,23 +26,6 @@ class Counter():
         v = self.value
         self.value += 1
         return v
-
-class InvalidArgsException(dbus.DBusException):
-    _dbus_error_name = "org.freedesktop.DBus.Error.InvalidArgs"
-
-class NotYetImplementedException(dbus.DBusException):
-    _dbus_error_name = "org.freedesktop.DBus.Error.NotSupported"
-    def __init__(self):
-        super().__init__("TODO: Not implemented")
-
-class IsLockedException(dbus.DBusException):
-    _dbus_error_name = "org.freedesktop.Secret.Error.IsLocked"
-
-class NoSessionException(dbus.DBusException):
-    _dbus_error_name = "org.freedesktop.Secret.Error.NoSession"
-
-class NoSuchObjectException(dbus.DBusException):
-    _dbus_error_name = "org.freedesktop.Secret.Error.NoSuchObject"
 
 class BusObjectWithProperties():
     PROPERTIES = {}
