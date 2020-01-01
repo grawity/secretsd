@@ -37,16 +37,16 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         "Collections": (get_collections, None, None),
     }
 
-    def make_bus_path(self, persist, type):
+    def make_bus_path(self, persist, template):
         if persist:
-            bus_path = type.PATH % self.db.get_next_object_id()
+            bus_path = template % self.db.get_next_object_id()
         else:
-            bus_path = type.PATH % self.next_object
+            bus_path = template % self.next_object
             self.next_object += 1
         return bus_path
 
     def make_object(self, sender, persist, type, *args, **kwargs):
-        bus_path = self.make_bus_path(persist, type)
+        bus_path = self.make_bus_path(persist, type.PATH)
         object = type(self, bus_path, *args, **kwargs)
         self.path_objects[bus_path] = object
         if sender:
@@ -72,7 +72,7 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
     def CreateCollection(self, properties, alias,
                          sender=None):
         label = properties["org.freedesktop.Secret.Collection.Label"]
-        bus_path = self.make_bus_path(True, SecretServiceCollectionFallback)
+        bus_path = self.make_bus_path(True, "/org/freedesktop/secrets/collection/c%d")
         self.db.add_collection(bus_path, label)
         if alias:
             self.db.add_alias(alias, bus_path)
