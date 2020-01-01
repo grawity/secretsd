@@ -11,6 +11,12 @@ class SecretServiceItemFallback(dbus.service.FallbackObject, BusObjectWithProper
         self.bus_path = bus_path
         super().__init__(self.service.bus, self.bus_path)
 
+    def get_collection(self, path):
+        attrs = self.service.db.get_attributes(path)
+        if attrs is None:
+            raise NoSuchObjectException(path)
+        return attrs["xdg:collection"]
+
     def get_attributes(self, path):
         attrs = self.service.db.get_attributes(path)
         if attrs is None:
@@ -21,6 +27,7 @@ class SecretServiceItemFallback(dbus.service.FallbackObject, BusObjectWithProper
     def set_attributes(self, path, value):
         if not self.service.db.item_exists(path):
             raise NoSuchObjectException(path)
+        attrs["xdg:collection"] = self.get_collection(path)
         self.service.db.set_attributes(path, value)
 
     def get_label(self, path):
