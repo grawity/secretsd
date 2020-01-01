@@ -20,7 +20,6 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         self.path_objects = {}
         self.next_object = 0
         self.client_objects = defaultdict(list)
-        self.collections = {}
 
         super().__init__(self.bus, "/org/freedesktop/secrets")
 
@@ -31,20 +30,6 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
     def get_collections(self, path=None):
         collections = self.db.list_collections()
         return dbus.Array(collections, "o")
-
-    def create_collection(self, alias, properties):
-        if alias:
-            path = self.db.resolve_alias(alias)
-            if path:
-                print("create_collection(%r) found alias path %r" % (alias, path))
-                return dbus.ObjectPath(path)
-
-        label = properties["org.freedesktop.Secret.Collection.Label"]
-        bus_path = self.make_bus_path(True, SecretServiceCollectionFallback)
-        self.db.add_collection(bus_path, label)
-        if alias:
-            self.db.add_alias(alias, bus_path)
-        return dbus.ObjectPath(path)
 
     INTERFACE = "org.freedesktop.Secret.Service"
     PROPERTIES = {
@@ -83,12 +68,17 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
                          sender_keyword="sender")
     def CreateCollection(self, properties, alias,
                          sender=None):
-        path = self.create_collection(alias, properties)
-        self.CollectionCreated(path)
+        label = properties["org.freedesktop.Secret.Collection.Label"]
+        bus_path = self.make_bus_path(True, SecretServiceCollectionFallback)
+        self.db.add_collection(bus_path, label)
+        if alias:
+            self.db.add_alias(alias, bus_path)
+        self.CollectionCreated(bus_path)
         self.PropertiesChanged("org.freedesktop.Secret.Service",
                                {"Collections": self.get_collections()},
                                [])
-        return (dbus.ObjectPath(path), NullObject)
+
+        return (dbus.ObjectPath(bus_path), NullObject)
 
     @dbus.service.method("org.freedesktop.Secret.Service", "aoo", "a{o(oayays)}")
     def GetSecrets(self, items, session):
