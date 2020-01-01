@@ -49,3 +49,7 @@ class BusObjectWithProperties():
                 raise InvalidArgsException("No such property %r" % str(property))
         else:
             raise InvalidArgsException("No such interface %r" % str(interface))
+
+    @dbus.service.signal("org.freedesktop.DBus.Properties", "sa{sv}as")
+    def PropertiesChanged(self, interface, changed_props, invalidated_props):
+        pass

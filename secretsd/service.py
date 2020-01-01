@@ -130,10 +130,6 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
     def Unlock(self, objects):
         return (objects, NullObject)
 
-    @dbus.service.signal("org.freedesktop.DBus.Properties", "sa{sv}as")
-    def PropertiesChanged(self, interface, changed_props, invalidated_props):
-        pass
-
     @dbus.service.signal("org.freedesktop.Secret.Service", "o")
     def CollectionCreated(self, bus_path):
         pass
