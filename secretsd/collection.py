@@ -96,7 +96,6 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
                                            {"Items": self.get_items(path)},
                                            [])
 
-
         return (dbus.ObjectPath(bus_path), NullObject)
 
     @dbus.service.method("org.freedesktop.Secret.Collection", "", "o",

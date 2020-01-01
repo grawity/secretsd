@@ -65,7 +65,18 @@ class SecretServiceItemFallback(dbus.service.FallbackObject, BusObjectWithProper
     @dbus.service.method("org.freedesktop.Secret.Item", "", "o",
                          path_keyword="path")
     def Delete(self, path=None):
+        coll = self.get_collection(path)
         self.service.db.delete_item(path)
+        self.service.send_signal(coll, "org.freedesktop.Secret.Collection",
+                                       "ItemDeleted",
+                                       "o",
+                                       path)
+        self.service.send_signal(coll, "org.freedesktop.DBus.Properties",
+                                       "PropertiesChanged",
+                                       "sa{sv}as",
+                                       "org.freedesktop.Secret.Collection",
+                                       {"Items": self.service.fallback_collection.get_items(coll)},
+                                       [])
         return NullObject
 
     @dbus.service.method("org.freedesktop.Secret.Item", "o", "(oayays)",
