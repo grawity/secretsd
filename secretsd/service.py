@@ -26,7 +26,7 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
 
         self.fallback_item = SecretServiceItemFallback(self)
         self.fallback_collection = SecretServiceCollectionFallback(self)
-        self.fallback_alias = SecretServiceCollectionFallback(self, "/org/freedesktop/aliases")
+        self.fallback_alias = SecretServiceCollectionFallback(self, "/org/freedesktop/secrets/aliases")
 
     def get_collections(self, path=None):
         collections = self.db.list_collections()
