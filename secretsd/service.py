@@ -81,7 +81,6 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
                          sender_keyword="sender")
     def CreateCollection(self, properties, alias,
                          sender=None):
-        print("CreateCollection(%r, %r)" % (properties, alias))
         path = self.create_collection(alias, properties)
         self.CollectionCreated(path)
         self.PropertiesChanged("org.freedesktop.Secret.Service",
