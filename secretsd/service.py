@@ -25,8 +25,6 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         super().__init__(self.bus, "/org/freedesktop/secrets")
 
         self.fallback_item = SecretServiceItemFallback(self)
-        self.compat_fallback_item = SecretServiceItemFallback(self,
-                                    "/lt/nullroute/secretsd/item")
 
         self.load_collections()
         self.create_collection("login", {
