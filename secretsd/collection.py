@@ -118,13 +118,13 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
         return (items, [])
 
     @dbus.service.signal("org.freedesktop.Secret.Collection", "o")
-    def ItemChanged(self, bus_path):
-        pass
-
-    @dbus.service.signal("org.freedesktop.Secret.Collection", "o")
     def ItemCreated(self, bus_path):
         pass
 
     @dbus.service.signal("org.freedesktop.Secret.Collection", "o")
     def ItemDeleted(self, bus_path):
+        pass
+
+    @dbus.service.signal("org.freedesktop.Secret.Collection", "o")
+    def ItemChanged(self, bus_path):
         pass
