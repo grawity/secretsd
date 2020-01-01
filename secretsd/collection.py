@@ -1,6 +1,7 @@
 import dbus
 import dbus.service
 from .exception import NoSuchObjectException
+from .item import SecretServiceItemFallback
 from .util import BusObjectWithProperties, NullObject
 
 class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWithProperties):
