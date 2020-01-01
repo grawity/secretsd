@@ -36,9 +36,6 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         "Collections": (get_collections, None, None),
     }
 
-    def make_alias_path(self, alias):
-        return "/org/freedesktop/secrets/aliases/%s" % encode_path_component(alias)
-
     def make_bus_path(self, persist, type):
         if persist:
             bus_path = type.PATH % self.db.get_next_object_id()
