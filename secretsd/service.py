@@ -5,7 +5,10 @@ import time
 from .collection import SecretServiceCollection
 from .item import SecretServiceItemFallback
 from .session import SecretServiceSession
-from .util import BusObjectWithProperties, NullObject, encode_path_component
+from .util import BusObjectWithProperties, NullObject
+
+def encode_path_component(value):
+    return "".join([c if c.isalnum() else "_%02x" % ord(c) for c in value])
 
 class SecretService(dbus.service.Object, BusObjectWithProperties):
     def __init__(self, bus, sdb):

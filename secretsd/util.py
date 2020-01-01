@@ -5,9 +5,6 @@ from .exception import InvalidArgsException
 
 NullObject = dbus.ObjectPath("/")
 
-def encode_path_component(value):
-    return "".join([c if c.isalnum() else "_%02x" % ord(c) for c in value])
-
 class BusObjectWithProperties():
     PROPERTIES = {}
 
