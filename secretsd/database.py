@@ -54,6 +54,9 @@ class SecretsDatabase():
         cur.execute("SELECT object FROM collections")
         return [r[0] for r in cur.fetchall()]
 
+    def collection_exists(self, object):
+        return bool(self.get_collection_metadata(object))
+
     def get_collection_metadata(self, object):
         print("DB: getting collection metadata for %r" % (object,))
         cur = self.db.cursor()

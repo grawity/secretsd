@@ -3,7 +3,7 @@ import dbus
 import dbus.service
 import time
 
-from .collection import SecretServiceCollection
+from .collection import SecretServiceCollectionFallback
 from .exception import *
 from .item import SecretServiceItemFallback
 from .session import SecretServiceSession
@@ -25,51 +25,24 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         super().__init__(self.bus, "/org/freedesktop/secrets")
 
         self.fallback_item = SecretServiceItemFallback(self)
-
-        self.load_collections()
-        self.create_collection("login", {
-            "org.freedesktop.Secret.Collection.Label": "Login keyring",
-        })
-        self.create_collection("default", {
-            "org.freedesktop.Secret.Collection.Label": "Default keyring",
-        })
+        self.fallback_collection = SecretServiceCollectionFallback(self)
+        self.fallback_alias = SecretServiceCollectionFallback(self, "/org/freedesktop/aliases")
 
     def get_collections(self, path=None):
-        #collections = self.db.list_collections()
-        collections = self.collections.keys()
+        collections = self.db.list_collections()
         return dbus.Array(collections, "o")
 
-    def load_collections(self):
-        for path in self.db.list_collections():
-            props = self.db.get_collection_properties(path)
-            crtime, mtime = self.db.get_collection_metadata(path)
-            col = SecretServiceCollection(self, path, props)
-            col.created = crtime
-            col.modified = mtime
-            self.path_objects[path] = col
-            self.collections[path] = col
-
-        for (alias, target) in self.db.get_aliases():
-            col = self.collections[target]
-            col.add_to_connection(self.bus, self.make_alias_path(alias))
-
     def create_collection(self, alias, properties):
-        if alias != "":
+        if alias:
             path = self.db.resolve_alias(alias)
             if path:
                 print("create_collection(%r) found alias path %r" % (alias, path))
                 return dbus.ObjectPath(path)
-
-        col = self.make_object(None, True, SecretServiceCollection, properties)
-        col.created = int(time.time())
-        col.modified = int(time.time())
-        self.db.add_collection(col.bus_path, properties)
-        self.path_objects[col.bus_path] = col
-        self.collections[col.bus_path] = col
-        if alias != "":
-            self.db.add_alias(alias, col.bus_path)
-            col.add_to_connection(self.bus, self.make_alias_path(alias))
-        return col.bus_path
+        bus_path = self.service.make_bus_path(True, SecretServiceCollectionFallback)
+        self.db.add_collection(bus_path, properties)
+        if alias:
+            self.db.add_alias(alias, bus_path)
+        return dbus.ObjectPath(path)
 
     INTERFACE = "org.freedesktop.Secret.Service"
     PROPERTIES = {
@@ -150,15 +123,9 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         if alias != "default":
             raise dbus.DBusException("Only the 'default' alias is supported",
                                      name="org.freedesktop.DBus.Error.NotSupported")
-        if collection not in self.collections:
+        if not self.db.collection_exists(collection):
             raise dbus.DBusException("Collection with path %r not found" % (str(collection),),
                                      name="org.freedesktop.DBus.Error.InvalidArgs")
-        old = self.db.resolve_alias(alias)
-        if old:
-            col = self.collections[old]
-            col.remove_from_connection(self.bus, self.make_alias_path(alias))
-        col = self.collections[collection]
-        col.add_to_connection(self.bus, self.make_alias_path(alias))
         self.db.add_alias(alias, collection)
 
     @dbus.service.method("org.freedesktop.Secret.Service", "a{ss}", "aoao")

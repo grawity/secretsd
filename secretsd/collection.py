@@ -2,39 +2,37 @@ import dbus
 import dbus.service
 from .util import BusObjectWithProperties, NullObject
 
-class SecretServiceCollection(dbus.service.Object, BusObjectWithProperties):
-    SUPPORTS_MULTIPLE_OBJECT_PATHS = True
-
+class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWithProperties):
+    ROOT = "/org/freedesktop/secrets/collection"
     PATH = "/org/freedesktop/secrets/collection/c%d"
 
-    def __init__(self, service, bus_path, properties):
+    def __init__(self, service, bus_path=ROOT):
         self.service = service
         self.bus_path = bus_path
-        self.locked = False
-        self.created = 0
-        self.modified = 0
-        self.label = properties["org.freedesktop.Secret.Collection.Label"]
-
-        super().__init__(service.bus, bus_path)
+        super().__init__(self.service.bus, self.bus_path)
 
     def get_items(self, path):
-        items = self.service.db.find_items({"xdg:collection": self.bus_path})
+        items = self.service.db.find_items({"xdg:collection": path})
         return dbus.Array(items, "o")
 
     def get_label(self, path):
-        return dbus.String(self.label)
+        props = self.service.db.get_collection_properties(path)
+        label = props["org.freedesktop.Secret.Collection.Label"]
+        return dbus.String(label)
 
     def set_label(self, path, value):
-        self.label = str(value)
-        self.service.db.set_collection_properties(self.bus_path, {
-            "org.freedesktop.Secret.Collection.Label": self.label,
+        label = str(value)
+        self.service.db.set_collection_properties(path, {
+            "org.freedesktop.Secret.Collection.Label": label,
         })
 
     def get_created(self, path):
-        return dbus.UInt64(self.created)
+        crtime, mtime = self.service.db.get_collection_metadata(path)
+        return dbus.UInt64(crtime)
 
     def get_modified(self, path):
-        return dbus.UInt64(self.modified)
+        crtime, mtime = self.service.db.get_collection_metadata(path)
+        return dbus.UInt64(mtime)
 
     INTERFACE = "org.freedesktop.Secret.Collection"
     PROPERTIES = {
@@ -46,14 +44,13 @@ class SecretServiceCollection(dbus.service.Object, BusObjectWithProperties):
     }
 
     @dbus.service.method("org.freedesktop.Secret.Collection", "a{sv}(oayays)b", "oo",
-                         sender_keyword="sender",
-                         byte_arrays=True)
+                         sender_keyword="sender", path_keyword="path", byte_arrays=True)
     def CreateItem(self, properties, secret, replace,
-                   sender=None):
+                   sender=None, path=None):
         label = properties["org.freedesktop.Secret.Item.Label"]
         attrs = properties["org.freedesktop.Secret.Item.Attributes"]
 
-        attrs.setdefault("xdg:collection", self.bus_path)
+        attrs.setdefault("xdg:collection", path)
         attrs.setdefault("xdg:schema", "org.freedesktop.Secret.Generic")
 
         sec_session, sec_param, sec_ct, sec_type = secret
@@ -73,15 +70,9 @@ class SecretServiceCollection(dbus.service.Object, BusObjectWithProperties):
 
         return (dbus.ObjectPath(bus_path), NullObject)
 
-    @dbus.service.method("org.freedesktop.Secret.Collection", "", "o")
-    def Delete(self):
-        path = self.bus_path
-        for (alias, target) in self.service.db.get_aliases():
-            if path == target:
-                self.remove_from_connection(self.bus, self.make_alias_path(alias))
-        self.remove_from_connection(self.bus, path)
-        del self.service.path_objects[path]
-        del self.service.collections[path]
+    @dbus.service.method("org.freedesktop.Secret.Collection", "", "o",
+                         path_keyword="path")
+    def Delete(self, path=None):
         self.service.db.delete_collection(path)
         self.service.CollectionDeleted(path)
         self.service.PropertiesChanged("org.freedesktop.Secret.Service",
@@ -89,8 +80,9 @@ class SecretServiceCollection(dbus.service.Object, BusObjectWithProperties):
                                        [])
         return NullObject
 
-    @dbus.service.method("org.freedesktop.Secret.Collection", "a{ss}", "ao")
-    def SearchItems(self, attributes):
+    @dbus.service.method("org.freedesktop.Secret.Collection", "a{ss}", "ao",
+                         path_keyword="path")
+    def SearchItems(self, attributes, path=None):
         attributes["xdg:collection"] = self.bus_path
         items = self.service.db.find_items(attributes)
         return (items, [])
