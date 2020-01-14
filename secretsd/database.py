@@ -1,9 +1,11 @@
+import nacl.secret
 import sqlite3
 import time
 
 class SecretsDatabase():
-    def __init__(self, path):
+    def __init__(self, path, encryption_key):
         self.db = sqlite3.connect(path)
+        self.secretbox = nacl.secret.SecretBox(encryption_key)
         self.initialize()
 
     def initialize(self):
@@ -114,7 +116,7 @@ class SecretsDatabase():
         cur.execute("INSERT INTO items VALUES (?,?,?,?)", (object, label, now, now))
         for key, val in attrs.items():
             cur.execute("INSERT INTO attributes VALUES (?,?,?)", (object, key, val))
-        cur.execute("INSERT INTO secrets VALUES (?,?,?)", (object, secret, sec_type))
+        cur.execute("INSERT INTO secrets VALUES (?,?,?)", (object, self.secretbox.encrypt(secret), sec_type))
         self.db.commit()
 
     def find_items(self, match_attrs):
@@ -166,7 +168,9 @@ class SecretsDatabase():
         print("DB: getting secret for %r" % object)
         cur = self.db.cursor()
         cur.execute("SELECT secret, type FROM secrets WHERE object = ?", (object,))
-        return cur.fetchone()
+        secret_data, secret_type = cur.fetchone()
+        secret = self.secretbox.decrypt(secret_data)
+        return secret, secret_type
 
     def set_secret(self, object, secret, sec_type):
         print("DB: updating secret for %r" % object)
@@ -175,7 +179,7 @@ class SecretsDatabase():
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("UPDATE secrets SET secret = ?, type = ? WHERE object = ?",
-                    (secret, sec_type, object))
+                    (self.secretbox.encrypt(secret), sec_type, object))
         cur.execute("UPDATE items SET modified = ? WHERE object = ?",
                     (now, object))
         self.db.commit()
