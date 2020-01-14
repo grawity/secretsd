@@ -41,7 +41,7 @@ class SecretsDatabase():
     # Collections
 
     def add_collection(self, object, label):
-        print("DB: adding collection %r with props %r" % (object, props))
+        print("DB: adding collection %r with label %r" % (object, label))
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("INSERT INTO collections VALUES (?,?,?,?)", (object, label, now, now))
