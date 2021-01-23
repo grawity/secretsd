@@ -8,6 +8,8 @@ class SecretsDatabase():
 
     def initialize(self):
         cur = self.db.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS version" \
+                    " (version INTEGER)")
         cur.execute("CREATE TABLE IF NOT EXISTS sequence" \
                     " (next INTEGER)")
         cur.execute("CREATE TABLE IF NOT EXISTS collections" \
