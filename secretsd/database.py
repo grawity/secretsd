@@ -27,9 +27,9 @@ class SecretsDatabase():
     def get_next_object_id(self):
         cur = self.db.cursor()
         cur.execute("SELECT next FROM sequence")
-        res = cur.fetchall()
+        res = cur.fetchone()
         if res:
-            oid = res[0][0]
+            oid = res[0]
             cur.execute("UPDATE sequence SET next = next + 1")
         else:
             oid = 0
