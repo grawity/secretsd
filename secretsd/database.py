@@ -9,20 +9,38 @@ class SecretsDatabase():
 
     def initialize(self):
         cur = self.db.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS version" \
-                    " (version INTEGER)")
-        cur.execute("CREATE TABLE IF NOT EXISTS sequence" \
-                    " (next INTEGER)")
-        cur.execute("CREATE TABLE IF NOT EXISTS collections" \
-                    " (object TEXT, label TEXT, created INTEGER, modified INTEGER)")
-        cur.execute("CREATE TABLE IF NOT EXISTS aliases" \
-                    " (alias TEXT, target TEXT)")
-        cur.execute("CREATE TABLE IF NOT EXISTS items" \
-                    " (object TEXT, label TEXT, created INTEGER, modified INTEGER)")
-        cur.execute("CREATE TABLE IF NOT EXISTS attributes" \
-                    " (object TEXT, attribute TEXT, value TEXT)")
-        cur.execute("CREATE TABLE IF NOT EXISTS secrets" \
-                    " (object TEXT, secret TEXT, type TEXT)")
+        cur.execute("CREATE TABLE IF NOT EXISTS version (" \
+                    "   version INTEGER" \
+                    ");")
+        cur.execute("CREATE TABLE IF NOT EXISTS sequence (" \
+                    "   next INTEGER" \
+                    ");")
+        cur.execute("CREATE TABLE IF NOT EXISTS collections (" \
+                    "   object TEXT," \
+                    "   label TEXT," \
+                    "   created INTEGER," \
+                    "   modified INTEGER" \
+                    ");")
+        cur.execute("CREATE TABLE IF NOT EXISTS aliases (" \
+                    "   alias TEXT," \
+                    "   target TEXT" \
+                    ");")
+        cur.execute("CREATE TABLE IF NOT EXISTS items (" \
+                    "   object TEXT," \
+                    "   label TEXT," \
+                    "   created INTEGER," \
+                    "   modified INTEGER" \
+                    ");")
+        cur.execute("CREATE TABLE IF NOT EXISTS attributes (" \
+                    "   object TEXT," \
+                    "   attribute TEXT," \
+                    "   value TEXT" \
+                    ");")
+        cur.execute("CREATE TABLE IF NOT EXISTS secrets (" \
+                    "   object TEXT," \
+                    "   secret TEXT," \
+                    "   type TEXT" \
+                    ");")
         self.db.commit()
 
     def _upgrade_v0_to_v1(self):
