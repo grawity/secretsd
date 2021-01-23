@@ -127,7 +127,8 @@ class SecretsDatabase():
     def delete_collection(self, object):
         print("DB: deleting collection %r" % (object,))
         cur = self.db.cursor()
-        subquery = "SELECT object FROM attributes WHERE attribute = 'xdg:collection' AND value = ?"
+        subquery = "SELECT object FROM attributes" \
+                   " WHERE attribute = 'xdg:collection' AND value = ?"
         cur.execute("DELETE FROM items WHERE object IN (" + subquery + ")", (object,))
         cur.execute("DELETE FROM secrets WHERE object IN (" + subquery + ")", (object,))
         cur.execute("DELETE FROM attributes WHERE object IN (" + subquery + ")", (object,))
@@ -239,7 +240,7 @@ class SecretsDatabase():
     def delete_item(self, object):
         print("DB: deleting item %r" % object)
         cur = self.db.cursor()
-        cur.execute("DELETE FROM items WHERE object = ?", (object,))
         cur.execute("DELETE FROM attributes WHERE object = ?", (object,))
         cur.execute("DELETE FROM secrets WHERE object = ?", (object,))
+        cur.execute("DELETE FROM items WHERE object = ?", (object,))
         self.db.commit()
