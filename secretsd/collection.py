@@ -37,7 +37,7 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
     def set_label(self, path, value):
         path = self.resolve_path(path)
         label = str(value)
-        self.service.db.set_collection_metadata_label(path, label)
+        self.service.db.set_collection_label(path, label)
 
     def get_created(self, path):
         path = self.resolve_path(path)
@@ -76,7 +76,7 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
         existing = self.service.db.find_items(attrs) if replace else []
         if existing:
             bus_path = existing[0]
-            self.service.db.set_attributes(bus_path, attrs)
+            self.service.db.set_item_attributes(bus_path, attrs)
             self.service.db.set_secret(bus_path, sec_data, sec_type)
             self.service.send_signal(path, "org.freedesktop.Secret.Collection",
                                            "ItemChanged",

@@ -116,7 +116,7 @@ class SecretsDatabase():
                     (object,))
         return cur.fetchone()
 
-    def set_collection_metadata_label(self, object, label):
+    def set_collection_label(self, object, label):
         print("DB: setting label for %r to %r" % (object, label))
         now = int(time.time())
         cur = self.db.cursor()
@@ -186,16 +186,16 @@ class SecretsDatabase():
         return [r[0] for r in cur.fetchall()]
 
     def item_exists(self, object):
-        return bool(self.get_metadata(object))
+        return bool(self.get_item_metadata(object))
 
-    def get_metadata(self, object):
+    def get_item_metadata(self, object):
         print("DB: getting metadata for %r" % object)
         cur = self.db.cursor()
         cur.execute("SELECT label, created, modified FROM items WHERE object = ?",
                     (object,))
         return cur.fetchone()
 
-    def set_metadata_label(self, object, label):
+    def set_item_label(self, object, label):
         print("DB: setting label for %r to %r" % (object, label))
         now = int(time.time())
         cur = self.db.cursor()
@@ -203,13 +203,13 @@ class SecretsDatabase():
                     (label, now, object))
         self.db.commit()
 
-    def get_attributes(self, object):
+    def get_item_attributes(self, object):
         print("DB: getting attrs for %r" % object)
         cur = self.db.cursor()
         cur.execute("SELECT attribute, value FROM attributes WHERE object = ?", (object,))
         return {k: v for k, v in cur.fetchall()}
 
-    def set_attributes(self, object, attrs):
+    def set_item_attributes(self, object, attrs):
         print("DB: setting attrs for %r to %r" % (object, attrs))
         now = int(time.time())
         cur = self.db.cursor()
