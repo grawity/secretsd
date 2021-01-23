@@ -83,7 +83,7 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
                                            "o",
                                            bus_path)
         else:
-            bus_path = self.service.make_bus_path(True, path + "/i%d")
+            bus_path = self.service.make_bus_path(True, "/org/freedesktop/secrets/item/i%d")
             self.service.db.add_item(bus_path, label, attrs, sec_data, sec_type)
             self.service.send_signal(path, "org.freedesktop.Secret.Collection",
                                            "ItemCreated",
