@@ -1,9 +1,19 @@
 import dbus
 import dbus.service
+import re
 
 from .exception import InvalidArgsException
 
 NullObject = dbus.ObjectPath("/")
+
+def item_path_to_id(path):
+    m = re.match(r"^/org/freedesktop/secrets/.*/(i\d+)$", path)
+    if m:
+        return m.group(1)
+    raise ValueError("object %r is not an item" % path)
+
+def item_id_to_path(id):
+    return "/org/freedesktop/secrets/item/%s" % id
 
 class BusObjectWithProperties():
     PROPERTIES = {}

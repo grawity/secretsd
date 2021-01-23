@@ -39,12 +39,29 @@ class SecretsDatabase():
             cur.execute("UPDATE secrets    SET object = ? WHERE object = ?", (new_object, old_object))
             cur.execute("UPDATE attributes SET object = ? WHERE object = ?", (new_object, old_object))
 
+    def _upgrade_v1_to_v2(self):
+        # Convert absolute object paths to relative IDs so they could be used at any base
+        cur = self.db.cursor()
+        cur.execute("SELECT object FROM items WHERE object LIKE '/org/%'")
+        res = cur.fetchall()
+        for (object,) in res:
+            item_id = object.split("/")[-1]
+            print("Object %r => item %r" % (object, item_id))
+            cur.execute("UPDATE items      SET object = ? WHERE object = ?", (item_id, object))
+            cur.execute("UPDATE secrets    SET object = ? WHERE object = ?", (item_id, object))
+            cur.execute("UPDATE attributes SET object = ? WHERE object = ?", (item_id, object))
+
     def upgrade(self):
         print("DB: Current database version is %d" % self.get_version())
         if self.get_version() == 0:
             print("Upgrading to version %d" % (1,))
             self._upgrade_v0_to_v1()
             self.db.cursor().execute("UPDATE version SET version = ?", (1,))
+            self.db.commit()
+        if self.get_version() == 1:
+            print("Upgrading to version %d" % (2,))
+            self._upgrade_v1_to_v2()
+            self.db.cursor().execute("UPDATE version SET version = ?", (2,))
             self.db.commit()
         print("DB: New database version is %d" % self.get_version())
 

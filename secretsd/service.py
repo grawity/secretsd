@@ -8,7 +8,7 @@ from .collection import SecretServiceCollectionFallback
 from .exception import *
 from .item import SecretServiceItemFallback
 from .session import SecretServiceSession
-from .util import BusObjectWithProperties, NullObject
+from .util import BusObjectWithProperties, NullObject, item_id_to_path
 
 def encode_path_component(value):
     return "".join([c if c.isalnum() else "_%02x" % ord(c) for c in value])
@@ -121,7 +121,8 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
 
     @dbus.service.method("org.freedesktop.Secret.Service", "a{ss}", "aoao")
     def SearchItems(self, attributes):
-        unlocked_items = self.db.find_items(attributes)
+        unlocked_items = [item_id_to_path(id)
+                          for id in self.db.find_items(attributes)]
         locked_items = []
         return unlocked_items, locked_items
 

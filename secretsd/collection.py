@@ -2,7 +2,7 @@ import dbus
 import dbus.service
 from .exception import NoSuchObjectException
 from .item import SecretServiceItemFallback
-from .util import BusObjectWithProperties, NullObject
+from .util import BusObjectWithProperties, NullObject, item_id_to_path
 
 class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWithProperties):
     ROOT = "/org/freedesktop/secrets/collection"
@@ -26,7 +26,8 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
 
     def get_items(self, path):
         path = self.resolve_path(path)
-        items = self.service.db.find_items({"xdg:collection": path})
+        items = [item_id_to_path(id)
+                 for id in self.service.db.find_items({"xdg:collection": path})]
         return dbus.Array(items, "o")
 
     def get_label(self, path):
@@ -114,7 +115,8 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
     def SearchItems(self, attributes, path=None):
         path = self.resolve_path(path)
         attributes["xdg:collection"] = path
-        items = self.service.db.find_items(attributes)
+        items = [item_id_to_path(id)
+                 for id in self.service.db.find_items(attributes)]
         return items
 
     @dbus.service.signal("org.freedesktop.Secret.Collection", "o")
