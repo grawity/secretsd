@@ -115,7 +115,7 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
         path = self.resolve_path(path)
         attributes["xdg:collection"] = path
         items = self.service.db.find_items(attributes)
-        return (items, [])
+        return items
 
     @dbus.service.signal("org.freedesktop.Secret.Collection", "o")
     def ItemCreated(self, bus_path):

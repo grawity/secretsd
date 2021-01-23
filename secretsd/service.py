@@ -121,8 +121,9 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
 
     @dbus.service.method("org.freedesktop.Secret.Service", "a{ss}", "aoao")
     def SearchItems(self, attributes):
-        items = self.db.find_items(attributes)
-        return (items, [])
+        unlocked_items = self.db.find_items(attributes)
+        locked_items = []
+        return unlocked_items, locked_items
 
     @dbus.service.method("org.freedesktop.Secret.Service", "ao", "aoo")
     def Lock(self, objects):
