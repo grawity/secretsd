@@ -5,6 +5,7 @@ class SecretsDatabase():
     def __init__(self, path):
         self.db = sqlite3.connect(path)
         self.initialize()
+        self.upgrade()
 
     def initialize(self):
         cur = self.db.cursor()
@@ -23,6 +24,21 @@ class SecretsDatabase():
         cur.execute("CREATE TABLE IF NOT EXISTS secrets" \
                     " (object TEXT, secret TEXT, type TEXT)")
         self.db.commit()
+
+    def upgrade(self):
+        print("DB: Current database version is %d" % self.get_version())
+
+    def get_version(self):
+        cur = self.db.cursor()
+        cur.execute("SELECT version FROM version")
+        res = cur.fetchone()
+        if res:
+            version = res[0]
+        else:
+            version = 0
+            cur.execute("INSERT INTO version VALUES (?)", (version,))
+            self.db.commit()
+        return version
 
     def get_next_object_id(self):
         cur = self.db.cursor()
