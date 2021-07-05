@@ -30,6 +30,8 @@ class KWalletClient():
     def get_password(self, name):
         if self.mgr.hasEntry(self.handle, self.folder, name, self.app_id):
             return str(self.mgr.readPassword(self.handle, self.folder, name, self.app_id))
+        else:
+            raise KeyError(name)
 
     def set_password(self, name, value):
         self.mgr.writePassword(self.handle, self.folder, name, value, self.app_id)
