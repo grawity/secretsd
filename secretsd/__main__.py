@@ -25,6 +25,8 @@ mk_source = args.master_key or "file:%s" % key_path
 
 try:
     mkey = base64.b64decode(load_ext_key(mk_source))
+    if len(mkey) != 32:
+        exit("error: Master key is not 32 bytes long")
 except (KeyError, FileNotFoundError):
     # No passphrases or interactive prompts -- we're a D-Bus service!
     if os.path.exists(db_path):
