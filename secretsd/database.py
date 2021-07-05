@@ -2,8 +2,9 @@ import sqlite3
 import time
 
 class SecretsDatabase():
-    def __init__(self, path):
+    def __init__(self, path, mkey):
         self.db = sqlite3.connect(path)
+        self.mk = mkey
         self.initialize()
         self.upgrade()
 
@@ -42,6 +43,14 @@ class SecretsDatabase():
                     "   type TEXT" \
                     ")")
         self.db.commit()
+
+    def _encrypt_buf(self, buf):
+        # XXX
+        return buf
+
+    def _decrypt_buf(self, buf):
+        # XXX
+        return buf
 
     def _upgrade_v0_to_v1(self):
         # Undo commit affc514 "make items use bus paths underneath their collection"
@@ -174,7 +183,8 @@ class SecretsDatabase():
         cur.execute("INSERT INTO items VALUES (?,?,?,?)", (object, label, now, now))
         for key, val in attrs.items():
             cur.execute("INSERT INTO attributes VALUES (?,?,?)", (object, key, val))
-        cur.execute("INSERT INTO secrets VALUES (?,?,?)", (object, secret, sec_type))
+        cur.execute("INSERT INTO secrets VALUES (?,?,?)", (object, self._encrypt_buf(secret),
+                                                           sec_type))
         self.db.commit()
 
     def find_items(self, match_attrs):
@@ -226,7 +236,8 @@ class SecretsDatabase():
         print("DB: getting secret for %r" % object)
         cur = self.db.cursor()
         cur.execute("SELECT secret, type FROM secrets WHERE object = ?", (object,))
-        return cur.fetchone()
+        secret, sec_type = cur.fetchone()
+        return self._decrypt_buf(secret), sec_type
 
     def set_secret(self, object, secret, sec_type):
         print("DB: updating secret for %r" % object)
@@ -235,7 +246,7 @@ class SecretsDatabase():
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("UPDATE secrets SET secret = ?, type = ? WHERE object = ?",
-                    (secret, sec_type, object))
+                    (self._encrypt_buf(secret), sec_type, object))
         cur.execute("UPDATE items SET modified = ? WHERE object = ?",
                     (now, object))
         self.db.commit()

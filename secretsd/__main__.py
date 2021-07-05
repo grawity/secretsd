@@ -37,7 +37,7 @@ except (KeyError, FileNotFoundError):
 
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
-sdb = SecretsDatabase(db_path)
+sdb = SecretsDatabase(db_path, mkey)
 svc = SecretService(bus, sdb)
 
 loop = GLib.MainLoop()
