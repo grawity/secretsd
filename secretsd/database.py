@@ -52,19 +52,22 @@ class SecretsDatabase():
         for (old_object,) in res:
             item_id = old_object.split("/")[-1]
             new_object = "/org/freedesktop/secrets/item/%s" % item_id
-            print("Object %r => %r" % (old_object, new_object))
-            cur.execute("UPDATE items      SET object = ? WHERE object = ?", (new_object, old_object))
-            cur.execute("UPDATE secrets    SET object = ? WHERE object = ?", (new_object, old_object))
-            cur.execute("UPDATE attributes SET object = ? WHERE object = ?", (new_object, old_object))
+            print("DB: moving object %r => %r" % (old_object, new_object))
+            cur.execute("UPDATE items      SET object = ? WHERE object = ?",
+                        (new_object, old_object))
+            cur.execute("UPDATE secrets    SET object = ? WHERE object = ?",
+                        (new_object, old_object))
+            cur.execute("UPDATE attributes SET object = ? WHERE object = ?",
+                        (new_object, old_object))
 
     def upgrade(self):
-        print("DB: Current database version is %d" % self.get_version())
+        print("DB: current database version is %d" % self.get_version())
         if self.get_version() == 0:
-            print("Upgrading to version %d" % (1,))
+            print("DB: upgrading to version %d" % (1,))
             self._upgrade_v0_to_v1()
             self.db.cursor().execute("UPDATE version SET version = ?", (1,))
             self.db.commit()
-        print("DB: New database version is %d" % self.get_version())
+        print("DB: new database version is %d" % self.get_version())
 
     def get_version(self):
         cur = self.db.cursor()
