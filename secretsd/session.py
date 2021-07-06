@@ -1,7 +1,5 @@
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import dh
-from cryptography.hazmat.primitives.hashes import SHA256
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import dbus
 import dbus.service
 import os
@@ -10,6 +8,7 @@ from .crypto_backend import (
     AES_BLOCK_BYTES,
     aes_cbc_encrypt,
     aes_cbc_decrypt,
+    hkdf_sha256_derive,
     pkcs7_pad,
     pkcs7_unpad,
 )
@@ -40,9 +39,7 @@ class SecretServiceSession(dbus.service.Object):
                                            MODP1024)
             peer_pub = peer_pubn.public_key(default_backend())
             shared_key = our_priv.exchange(peer_pub)
-            kdf = HKDF(algorithm=SHA256(), length=128//8,
-                       salt=b"", info=b"", backend=default_backend())
-            self.crypt_key = kdf.derive(shared_key)
+            self.crypt_key = hkdf_sha256_derive(shared_key, 128 // 8)
             output = our_priv.public_key().public_numbers().y
             return (dbus.ByteArray(output.to_bytes(128, "big")), True)
         else:

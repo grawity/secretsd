@@ -6,6 +6,7 @@ __all__ = [
     "aes_cbc_decrypt",
     "aes_cfb8_encrypt",
     "aes_cfb8_decrypt",
+    "hkdf_sha256_derive",
     "pkcs7_pad",
     "pkcs7_unpad",
 ]
@@ -14,6 +15,8 @@ backend = os.environ.get("CRYPTO_BACKEND", "cryptography")
 
 if backend == "cryptodome":
     from Crypto.Cipher import AES
+    from Crypto.Hash import SHA256
+    from Crypto.Protocol.KDF import HKDF
     from Crypto.Util import Padding
 
     AES_BLOCK_BYTES = AES.block_size
@@ -30,6 +33,9 @@ if backend == "cryptodome":
     def aes_cfb8_decrypt(data, key, iv):
         return AES.new(key, AES.MODE_CFB, iv).decrypt(data)
 
+    def hkdf_sha256_derive(input, nbytes):
+        return HKDF(input, nbytes, b"", hashmod=SHA256)
+
     def pkcs7_pad(data, size):
         return Padding.pad(data, size, style="pkcs7")
 
@@ -40,6 +46,8 @@ elif backend == "cryptography":
     from cryptography.hazmat.primitives.ciphers import Cipher
     from cryptography.hazmat.primitives.ciphers.algorithms import AES
     from cryptography.hazmat.primitives.ciphers.modes import CBC, CFB8
+    from cryptography.hazmat.primitives.hashes import SHA256
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
     from cryptography.hazmat.primitives.padding import PKCS7
 
     AES_BLOCK_BYTES = AES.block_size // 8
@@ -59,6 +67,13 @@ elif backend == "cryptography":
     def aes_cbc_decrypt(data, key, iv):
         c = Cipher(AES(key), CBC(iv)).decryptor()
         return c.update(data) + c.finalize()
+
+    def hkdf_sha256_derive(input, nbytes):
+        k = HKDF(algorithm=SHA256(),
+                 length=nbytes,
+                 salt=b"",
+                 info=b"")
+        return k.derive(input)
 
     def pkcs7_pad(data, size):
         p = PKCS7(size * 8).padder()
