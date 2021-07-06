@@ -24,17 +24,17 @@ def sha256_hmac(buf, key):
     return hmac.new(key, buf, digestmod="sha256").digest()
 
 def aes_cfb8_wrap(data, key):
-    mac = sha256_hmac(data, key)
     iv = os.urandom(AES_BLOCK_BYTES)
-    return mac + iv + aes_cfb8_encrypt(data, key, iv)
+    ct = aes_cfb8_encrypt(data, key, iv)
+    buf = iv + ct
+    return sha256_hmac(buf, key) + buf
 
 def aes_cfb8_unwrap(buf, key):
     mac, buf = buf[:SHA256_HMAC_BYTES], buf[SHA256_HMAC_BYTES:]
-    iv, buf = buf[:AES_BLOCK_BYTES], buf[AES_BLOCK_BYTES:]
-    data = aes_cfb8_decrypt(buf, key, iv)
-    if sha256_hmac(data, key) != mac:
+    if sha256_hmac(buf, key) != mac:
         raise IOError("MAC verification failed")
-    return data
+    iv, ct = buf[:AES_BLOCK_BYTES], buf[AES_BLOCK_BYTES:]
+    return aes_cfb8_decrypt(ct, key, iv)
 
 if __name__ == "__main__":
     key = os.urandom(16)
