@@ -13,7 +13,7 @@ This is a generic backend for the libsecret API, used by various programs to sto
 
 ## Storage
 
-For now, all secrets are encrypted using a single "database key", which is stored in a regular file by default but can be provided through an environment variable, KWallet, or read from an external program.
+For now, all secrets are encrypted using a single "database key", which is stored in a regular file by default but can be provided through an environment variable, KWallet, or read from an external program. Item titles and attributes are **not** encrypted.
 
     secretsd -k file:${CREDENTIALS_DIRECTORY}/secrets.key
     secretsd -k env:DATABASE_KEY
