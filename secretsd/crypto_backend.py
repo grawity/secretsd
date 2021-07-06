@@ -1,5 +1,10 @@
 import os
 
+__all__ = [
+    "aes_cfb8_wrap",
+    "aes_cfb8_unwrap",
+]
+
 backend = os.environ.get("CRYPTO_BACKEND", "cryptography")
 
 if backend == "cryptodome":

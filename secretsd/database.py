@@ -1,10 +1,13 @@
 import sqlite3
 import time
 
+from .encryption import generate_key, sha256_hash, aes_cfb8_wrap, aes_cfb8_unwrap
+
 class SecretsDatabase():
     def __init__(self, path, mkey):
         self.db = sqlite3.connect(path)
         self.mk = mkey
+        self.dk = None
         self.initialize()
         self.upgrade()
 
@@ -15,6 +18,10 @@ class SecretsDatabase():
                     ")")
         cur.execute("CREATE TABLE IF NOT EXISTS sequence (" \
                     "   next INTEGER" \
+                    ")")
+        cur.execute("CREATE TABLE IF NOT EXISTS parameters (" \
+                    "   name TEXT," \
+                    "   value TEXT" \
                     ")")
         cur.execute("CREATE TABLE IF NOT EXISTS collections (" \
                     "   object TEXT," \
@@ -44,13 +51,33 @@ class SecretsDatabase():
                     ")")
         self.db.commit()
 
-    def _encrypt_buf(self, buf):
-        # XXX
-        return buf
+    def _load_dkey(self):
+        v = self.get_version()
+        if v == 2:
+            cur = self.db.cursor()
+            cur.execute("SELECT value FROM parameters WHERE name = 'dkey_wrapped'")
+            dkey_wrapped, = cur.fetchone()
+            cur.execute("SELECT value FROM parameters WHERE name = 'dkey_hash'")
+            dkey_hash, = cur.fetchone()
+            dkey = self._decrypt_buf(dkey_wrapped, with_mkey=True)
+            if dkey_hash != self._checksum_key(dkey):
+                raise IOError("wrong mkey (dkey checksum mismatch)")
+            if len(dkey) != 32:
+                raise IOError("wrong dkey length (expected 32 bytes)")
+            self.dk = dkey
+        else:
+            raise NotImplementedError()
 
-    def _decrypt_buf(self, buf):
-        # XXX
-        return buf
+    def _checksum_key(self, buf):
+        return sha256_hash(buf)
+
+    def _encrypt_buf(self, buf, with_mkey=False):
+        key = self.mk if with_mkey else self.dk
+        return aes_cfb8_wrap(buf, key)
+
+    def _decrypt_buf(self, buf, with_mkey=None):
+        key = self.mk if with_mkey else self.dk
+        return aes_cfb8_unwrap(buf, key)
 
     def _upgrade_v0_to_v1(self):
         # Undo commit affc514 "make items use bus paths underneath their collection"
@@ -69,6 +96,25 @@ class SecretsDatabase():
             cur.execute("UPDATE attributes SET object = ? WHERE object = ?",
                         (new_object, old_object))
 
+    def _upgrade_v1_to_v2(self):
+        # Encrypt all secrets using the database master key
+        cur = self.db.cursor()
+        # Generate a "data key"
+        print("DB: generating a data key")
+        dkey = generate_key()
+        cur.execute("INSERT INTO parameters VALUES ('dkey_wrapped', ?)",
+                    (self._encrypt_buf(dkey, with_mkey=True),))
+        cur.execute("INSERT INTO parameters VALUES ('dkey_hash', ?)",
+                    (self._checksum_key(dkey),))
+        self.dk = dkey
+        # Encrypt all currently stored secrets
+        cur.execute("SELECT object, secret FROM secrets")
+        res = cur.fetchall()
+        for object, old_blob in res:
+            print("DB: encrypting secret %r" % (object,))
+            new_blob = self._encrypt_buf(old_blob)
+            cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (new_blob, object))
+
     def upgrade(self):
         print("DB: current database version is %d" % self.get_version())
         if self.get_version() == 0:
@@ -76,6 +122,15 @@ class SecretsDatabase():
             self._upgrade_v0_to_v1()
             self.db.cursor().execute("UPDATE version SET version = ?", (1,))
             self.db.commit()
+        if self.get_version() == 1:
+            print("DB: upgrading to version %d" % (2,))
+            self._upgrade_v1_to_v2()
+            self.db.cursor().execute("UPDATE version SET version = ?", (2,))
+            self.db.commit()
+            print("DB: vacuuming database")
+            self.db.cursor().execute("VACUUM")
+        if self.get_version() >= 2:
+            self._load_dkey()
         print("DB: new database version is %d" % self.get_version())
 
     def get_version(self):

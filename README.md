@@ -2,8 +2,6 @@
 
 This is a generic backend for the libsecret API, used by various programs to store passwords and similar secrets. It is an alternative to gnome-keyring-daemon and kwalletd.
 
-**Note:** Currently secretsd does not encrypt the stored passwords in any way. Patches requested.
-
 ## Dependencies
 
   * python-cryptography
