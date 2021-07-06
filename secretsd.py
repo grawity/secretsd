@@ -1,2 +1,2 @@
 #!/usr/bin/env python3
-import secretsd
+import secretsd.__main__
