@@ -1,11 +1,19 @@
+import base64
 import sqlite3
 import time
 
+from .encryption import generate_key, aes_cfb8_wrap, aes_cfb8_unwrap
+from .external_keys import load_ext_key, store_ext_key
+
 class SecretsDatabase():
-    def __init__(self, path):
+    def __init__(self, path, key_path):
         self.db = sqlite3.connect(path)
+        self.kp = key_path
+        self.mk = None
+        self.dk = None
         self.initialize()
         self.upgrade()
+        self.load_keys()
 
     def initialize(self):
         cur = self.db.cursor()
@@ -14,6 +22,10 @@ class SecretsDatabase():
                     ")")
         cur.execute("CREATE TABLE IF NOT EXISTS sequence (" \
                     "   next INTEGER" \
+                    ")")
+        cur.execute("CREATE TABLE IF NOT EXISTS parameters (" \
+                    "   name TEXT," \
+                    "   value TEXT" \
                     ")")
         cur.execute("CREATE TABLE IF NOT EXISTS collections (" \
                     "   object TEXT," \
@@ -43,6 +55,57 @@ class SecretsDatabase():
                     ")")
         self.db.commit()
 
+    # Encryption keys
+
+    def _store_mkey(self, key):
+        print("DB: storing master key to %r" % (self.kp))
+        store_ext_key(self.kp, base64.b64encode(key).decode())
+
+    def _load_mkey(self):
+        v = self.get_version()
+        if v == 2:
+            print("DB: loading master key from %r" % (self.kp))
+            try:
+                mkey = base64.b64decode(load_ext_key(self.kp))
+                if len(mkey) != 32:
+                    raise IOError("wrong mkey length (expected 32 bytes)")
+            except (KeyError, FileNotFoundError):
+                raise RuntimeError("could not load the database key from %r" % (self.kp))
+            self.mk = mkey
+        else:
+            raise NotImplementedError()
+
+    def _load_dkey(self):
+        v = self.get_version()
+        if v == 2:
+            cur = self.db.cursor()
+            cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
+            dkey, = cur.fetchone()
+            try:
+                dkey = self._decrypt_buf(dkey, with_mkey=True)
+            except IOError as e:
+                raise IOError("wrong mkey (%s)" % e)
+            if len(dkey) != 32:
+                raise IOError("wrong dkey length (expected 32 bytes)")
+            self.dk = dkey
+        else:
+            raise NotImplementedError()
+
+    def load_keys(self):
+        if self.get_version() >= 2:
+            self._load_mkey()
+            self._load_dkey()
+
+    def _encrypt_buf(self, buf, with_mkey=False):
+        key = self.mk if with_mkey else self.dk
+        return aes_cfb8_wrap(buf, key)
+
+    def _decrypt_buf(self, buf, with_mkey=None):
+        key = self.mk if with_mkey else self.dk
+        return aes_cfb8_unwrap(buf, key)
+
+    # Schema upgrades
+
     def _upgrade_v0_to_v1(self):
         # Undo commit affc514 "make items use bus paths underneath their collection"
         cur = self.db.cursor()
@@ -60,6 +123,28 @@ class SecretsDatabase():
             cur.execute("UPDATE attributes SET object = ? WHERE object = ?",
                         (new_object, old_object))
 
+    def _upgrade_v1_to_v2(self):
+        # Version 2 encrypts all secrets using the database master key
+        cur = self.db.cursor()
+        # Generate a "master key"
+        print("DB: generating a master key")
+        mkey = generate_key()
+        self._store_mkey(mkey)
+        self.mk = mkey
+        # Generate a "data key"
+        print("DB: generating a data key")
+        dkey = generate_key()
+        cur.execute("INSERT INTO parameters VALUES ('dkey', ?)",
+                    (self._encrypt_buf(dkey, with_mkey=True),))
+        self.dk = dkey
+        # Encrypt all currently stored secrets
+        cur.execute("SELECT object, secret FROM secrets")
+        res = cur.fetchall()
+        for object, old_blob in res:
+            print("DB: encrypting secret %r" % (object,))
+            new_blob = self._encrypt_buf(old_blob)
+            cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (new_blob, object))
+
     def upgrade(self):
         print("DB: current database version is %d" % self.get_version())
         if self.get_version() == 0:
@@ -67,6 +152,13 @@ class SecretsDatabase():
             self._upgrade_v0_to_v1()
             self.db.cursor().execute("UPDATE version SET version = ?", (1,))
             self.db.commit()
+        if self.get_version() == 1:
+            print("DB: upgrading to version %d" % (2,))
+            self._upgrade_v1_to_v2()
+            self.db.cursor().execute("UPDATE version SET version = ?", (2,))
+            self.db.commit()
+            print("DB: vacuuming database")
+            self.db.cursor().execute("VACUUM")
         print("DB: new database version is %d" % self.get_version())
 
     def get_version(self):
@@ -174,7 +266,8 @@ class SecretsDatabase():
         cur.execute("INSERT INTO items VALUES (?,?,?,?)", (object, label, now, now))
         for key, val in attrs.items():
             cur.execute("INSERT INTO attributes VALUES (?,?,?)", (object, key, val))
-        cur.execute("INSERT INTO secrets VALUES (?,?,?)", (object, secret, sec_type))
+        cur.execute("INSERT INTO secrets VALUES (?,?,?)", (object, self._encrypt_buf(secret),
+                                                           sec_type))
         self.db.commit()
 
     def find_items(self, match_attrs):
@@ -226,7 +319,8 @@ class SecretsDatabase():
         print("DB: getting secret for %r" % object)
         cur = self.db.cursor()
         cur.execute("SELECT secret, type FROM secrets WHERE object = ?", (object,))
-        return cur.fetchone()
+        secret, sec_type = cur.fetchone()
+        return self._decrypt_buf(secret), sec_type
 
     def set_secret(self, object, secret, sec_type):
         print("DB: updating secret for %r" % object)
@@ -235,7 +329,7 @@ class SecretsDatabase():
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("UPDATE secrets SET secret = ?, type = ? WHERE object = ?",
-                    (secret, sec_type, object))
+                    (self._encrypt_buf(secret), sec_type, object))
         cur.execute("UPDATE items SET modified = ? WHERE object = ?",
                     (now, object))
         self.db.commit()
