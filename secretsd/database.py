@@ -1,7 +1,7 @@
 import sqlite3
 import time
 
-from .encryption import generate_key, sha256_hash, aes_cfb8_wrap, aes_cfb8_unwrap
+from .encryption import generate_key, aes_cfb8_wrap, aes_cfb8_unwrap
 
 class SecretsDatabase():
     def __init__(self, path, mkey):
@@ -55,21 +55,17 @@ class SecretsDatabase():
         v = self.get_version()
         if v == 2:
             cur = self.db.cursor()
-            cur.execute("SELECT value FROM parameters WHERE name = 'dkey_wrapped'")
-            dkey_wrapped, = cur.fetchone()
-            cur.execute("SELECT value FROM parameters WHERE name = 'dkey_hash'")
-            dkey_hash, = cur.fetchone()
-            dkey = self._decrypt_buf(dkey_wrapped, with_mkey=True)
-            if dkey_hash != self._checksum_key(dkey):
-                raise IOError("wrong mkey (dkey checksum mismatch)")
+            cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
+            dkey, = cur.fetchone()
+            try:
+                dkey = self._decrypt_buf(dkey, with_mkey=True)
+            except IOError as e:
+                raise IOError("wrong mkey (%s)" % e)
             if len(dkey) != 32:
                 raise IOError("wrong dkey length (expected 32 bytes)")
             self.dk = dkey
         else:
             raise NotImplementedError()
-
-    def _checksum_key(self, buf):
-        return sha256_hash(buf)
 
     def _encrypt_buf(self, buf, with_mkey=False):
         key = self.mk if with_mkey else self.dk
@@ -102,10 +98,8 @@ class SecretsDatabase():
         # Generate a "data key"
         print("DB: generating a data key")
         dkey = generate_key()
-        cur.execute("INSERT INTO parameters VALUES ('dkey_wrapped', ?)",
+        cur.execute("INSERT INTO parameters VALUES ('dkey', ?)",
                     (self._encrypt_buf(dkey, with_mkey=True),))
-        cur.execute("INSERT INTO parameters VALUES ('dkey_hash', ?)",
-                    (self._checksum_key(dkey),))
         self.dk = dkey
         # Encrypt all currently stored secrets
         cur.execute("SELECT object, secret FROM secrets")

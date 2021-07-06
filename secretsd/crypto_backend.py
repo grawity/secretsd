@@ -1,3 +1,4 @@
+import hmac
 import os
 
 __all__ = [
@@ -36,14 +37,23 @@ elif backend == "cryptography":
 else:
     raise RuntimeError("unsupported crypto backend %r" % backend)
 
-def aes_cfb8_wrap(data, key):
-    iv = os.urandom(AES_BLOCK_BYTES)
-    return iv + aes_cfb8_encrypt(data, key, iv)
+SHA256_HMAC_BYTES = 32
 
-def aes_cfb8_unwrap(data, key):
-    iv = data[:AES_BLOCK_BYTES]
-    data = data[AES_BLOCK_BYTES:]
-    return aes_cfb8_decrypt(data, key, iv)
+def sha256_hmac(buf, key):
+    return hmac.new(key, buf, digestmod="sha256").digest()
+
+def aes_cfb8_wrap(data, key):
+    mac = sha256_hmac(data, key)
+    iv = os.urandom(AES_BLOCK_BYTES)
+    return mac + iv + aes_cfb8_encrypt(data, key, iv)
+
+def aes_cfb8_unwrap(buf, key):
+    mac, buf = buf[:SHA256_HMAC_BYTES], buf[SHA256_HMAC_BYTES:]
+    iv, buf = buf[:AES_BLOCK_BYTES], buf[AES_BLOCK_BYTES:]
+    data = aes_cfb8_decrypt(buf, key, iv)
+    if sha256_hmac(data, key) != mac:
+        raise IOError("MAC verification failed")
+    return data
 
 if __name__ == "__main__":
     key = os.urandom(16)

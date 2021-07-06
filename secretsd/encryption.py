@@ -1,5 +1,4 @@
 import base64
-import hashlib
 import os
 
 from .crypto_backend import *
@@ -15,6 +14,3 @@ def _xor_bytes(a, b):
 def _fold_key(buf):
     assert(len(buf) == 32)
     return _xor_bytes(buf[:16], buf[16:])
-
-def sha256_hash(buf):
-    return hashlib.sha256(buf).digest()
