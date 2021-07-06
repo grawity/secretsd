@@ -2,15 +2,15 @@ import base64
 import hmac
 import os
 
-from .crypto_backend import *
+from .crypto_backend import (
+    AES_BLOCK_BYTES,
+    aes_cfb8_encrypt,
+    aes_cfb8_decrypt,
+)
 
 KEY_SIZE_BYTES = 32
 
 SHA256_HMAC_BYTES = 32
-
-def generate_key():
-    # Always generate 256-bit keys for simplicity; AES-128 can just fold them in half.
-    return os.urandom(KEY_SIZE_BYTES)
 
 def _xor_bytes(a, b):
     assert(len(a) == len(b))
@@ -19,6 +19,9 @@ def _xor_bytes(a, b):
 def _fold_key(buf):
     assert(len(buf) == 32)
     return _xor_bytes(buf[:16], buf[16:])
+
+def generate_key():
+    return os.urandom(KEY_SIZE_BYTES)
 
 def sha256_hmac(buf, key):
     return hmac.new(key, buf, digestmod="sha256").digest()
@@ -35,11 +38,3 @@ def aes_cfb8_unwrap(buf, key):
         raise IOError("MAC verification failed")
     iv, ct = buf[:AES_BLOCK_BYTES], buf[AES_BLOCK_BYTES:]
     return aes_cfb8_decrypt(ct, key, iv)
-
-if __name__ == "__main__":
-    key = os.urandom(16)
-    data = os.urandom(14)
-    print(data)
-    data = aes_cfb8_wrap(data, key)
-    data = aes_cfb8_unwrap(data, key)
-    print(data)

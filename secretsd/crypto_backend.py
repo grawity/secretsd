@@ -101,10 +101,7 @@ elif backend == "cryptography":
         return our_pubkey, shared_key
 
     def hkdf_sha256_derive(input, nbytes):
-        k = HKDF(algorithm=SHA256(),
-                 length=nbytes,
-                 salt=b"",
-                 info=b"")
+        k = HKDF(algorithm=SHA256(), length=nbytes, salt=b"", info=b"")
         return k.derive(input)
 
     def pkcs7_pad(data, size):
@@ -119,12 +116,3 @@ elif backend == "cryptography":
 
 else:
     raise RuntimeError("unsupported crypto backend %r" % backend)
-
-if __name__ == "__main__":
-    iv = os.urandom(AES_BLOCK_BYTES)
-    key = os.urandom(16)
-    data = os.urandom(14)
-    print(data)
-    data = aes_cfb8_encrypt(data, key, iv)
-    data = aes_cfb8_decrypt(data, key, iv)
-    print(data)
