@@ -12,6 +12,8 @@ __all__ = [
     "pkcs7_unpad",
 ]
 
+# Second Oakley group (RFC 2409), to be used as "dh-ietf1024" in the 'Secret
+# Service' API. Don't look at me. I didn't write the spec.
 MODP1024_PRIME = 0xffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece65381ffffffffffffffff
 MODP1024_GENERATOR = 2
 
@@ -71,8 +73,6 @@ elif backend == "cryptography":
 
     AES_BLOCK_BYTES = AES.block_size // 8
 
-    MODP1024 = dh.DHParameterNumbers(p=MODP1024_PRIME, g=MODP1024_GENERATOR)
-
     def aes_cfb8_encrypt(data, key, iv):
         c = Cipher(AES(key), CFB8(iv)).encryptor()
         return c.update(data) + c.finalize()
@@ -90,9 +90,10 @@ elif backend == "cryptography":
         return c.update(data) + c.finalize()
 
     def dh_modp1024_exchange(peer_pubkey):
+        group = dh.DHParameterNumbers(p=MODP1024_PRIME, g=MODP1024_GENERATOR)
         peer_pubkey = int.from_bytes(peer_pubkey, "big")
-        peer_pubkey = dh.DHPublicNumbers(peer_pubkey, MODP1024).public_key()
-        our_privkey = MODP1024.parameters().generate_private_key()
+        peer_pubkey = dh.DHPublicNumbers(peer_pubkey, group).public_key()
+        our_privkey = group.parameters().generate_private_key()
         shared_key = our_privkey.exchange(peer_pubkey)
         our_pubkey = our_privkey.public_key().public_numbers().y
         our_pubkey = our_pubkey.to_bytes(1024 // 8, "big")
