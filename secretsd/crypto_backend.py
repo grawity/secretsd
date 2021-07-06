@@ -2,6 +2,8 @@ import os
 
 __all__ = [
     "AES_BLOCK_BYTES",
+    "aes_cbc_encrypt",
+    "aes_cbc_decrypt",
     "aes_cfb8_encrypt",
     "aes_cfb8_decrypt",
     "pkcs7_pad",
@@ -15,6 +17,12 @@ if backend == "cryptodome":
     from Crypto.Util import Padding
 
     AES_BLOCK_BYTES = AES.block_size
+
+    def aes_cbc_encrypt(data, key, iv):
+        return AES.new(key, AES.MODE_CBC, iv).encrypt(data)
+
+    def aes_cbc_decrypt(data, key, iv):
+        return AES.new(key, AES.MODE_CBC, iv).decrypt(data)
 
     def aes_cfb8_encrypt(data, key, iv):
         return AES.new(key, AES.MODE_CFB, iv).encrypt(data)
@@ -31,7 +39,7 @@ if backend == "cryptodome":
 elif backend == "cryptography":
     from cryptography.hazmat.primitives.ciphers import Cipher
     from cryptography.hazmat.primitives.ciphers.algorithms import AES
-    from cryptography.hazmat.primitives.ciphers.modes import CFB8
+    from cryptography.hazmat.primitives.ciphers.modes import CBC, CFB8
     from cryptography.hazmat.primitives.padding import PKCS7
 
     AES_BLOCK_BYTES = AES.block_size // 8
@@ -42,6 +50,14 @@ elif backend == "cryptography":
 
     def aes_cfb8_decrypt(data, key, iv):
         c = Cipher(AES(key), CFB8(iv)).decryptor()
+        return c.update(data) + c.finalize()
+
+    def aes_cbc_encrypt(data, key, iv):
+        c = Cipher(AES(key), CBC(iv)).encryptor()
+        return c.update(data) + c.finalize()
+
+    def aes_cbc_decrypt(data, key, iv):
+        c = Cipher(AES(key), CBC(iv)).decryptor()
         return c.update(data) + c.finalize()
 
     def pkcs7_pad(data, size):

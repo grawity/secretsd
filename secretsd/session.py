@@ -1,8 +1,5 @@
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import dh
-from cryptography.hazmat.primitives.ciphers import Cipher
-from cryptography.hazmat.primitives.ciphers.algorithms import AES
-from cryptography.hazmat.primitives.ciphers.modes import CBC
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 import dbus
@@ -11,6 +8,8 @@ import os
 
 from .crypto_backend import (
     AES_BLOCK_BYTES,
+    aes_cbc_encrypt,
+    aes_cbc_decrypt,
     pkcs7_pad,
     pkcs7_unpad,
 )
@@ -54,11 +53,9 @@ class SecretServiceSession(dbus.service.Object):
             return input, None
         elif self.algorithm == "dh-ietf1024-sha256-aes128-cbc-pkcs7":
             key = self.crypt_key
-            iv = os.urandom(AES.block_size//8)
-            e = Cipher(AES(self.crypt_key), CBC(iv),
-                       backend=default_backend()).encryptor()
+            iv = os.urandom(AES_BLOCK_BYTES)
             ct = pkcs7_pad(input, AES_BLOCK_BYTES)
-            ct = e.update(ct) + e.finalize()
+            ct = aes_cbc_encrypt(ct, key, iv)
             return ct, iv
 
     def decrypt(self, input, iv):
@@ -66,8 +63,6 @@ class SecretServiceSession(dbus.service.Object):
             return input
         elif self.algorithm == "dh-ietf1024-sha256-aes128-cbc-pkcs7":
             key = self.crypt_key
-            d = Cipher(AES(self.crypt_key), CBC(iv),
-                       backend=default_backend()).decryptor()
-            pt = d.update(input) + d.finalize()
+            pt = aes_cbc_decrypt(input, key, iv)
             pt = pkcs7_unpad(pt, AES_BLOCK_BYTES)
             return pt
