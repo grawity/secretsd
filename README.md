@@ -11,6 +11,18 @@ This is a generic backend for the libsecret API, used by various programs to sto
   * python-gobject (3.x)
   * python-xdg
 
+## Installation
+
+secretsd is a user-level daemon which uses your D-Bus "session bus". It could be manually started through `systemd --user`:
+
+    cp systemd/secretsd.service ~/.config/systemd/user/
+    systemctl --user start secretsd
+
+or automatically started on demand through D-Bus activation:
+
+    cp systemd/secretsd.service ~/.config/systemd/user/
+    cp dbus/org.freedesktop.secrets.service ~/.local/share/dbus-1/services/
+
 ## Storage
 
 For now, all secrets are encrypted using a single "database key", which is stored in a regular file by default but can be provided through an environment variable, KWallet, or read from an external program. Item titles and attributes are **not** encrypted.
