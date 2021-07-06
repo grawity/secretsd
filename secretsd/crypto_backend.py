@@ -4,12 +4,15 @@ __all__ = [
     "AES_BLOCK_BYTES",
     "aes_cfb8_encrypt",
     "aes_cfb8_decrypt",
+    "pkcs7_pad",
+    "pkcs7_unpad",
 ]
 
 backend = os.environ.get("CRYPTO_BACKEND", "cryptography")
 
 if backend == "cryptodome":
     from Crypto.Cipher import AES
+    from Crypto.Util import Padding
 
     AES_BLOCK_BYTES = AES.block_size
 
@@ -19,10 +22,17 @@ if backend == "cryptodome":
     def aes_cfb8_decrypt(data, key, iv):
         return AES.new(key, AES.MODE_CFB, iv).decrypt(data)
 
+    def pkcs7_pad(data, size):
+        return Padding.pad(data, size, style="pkcs7")
+
+    def pkcs7_unpad(data, size):
+        return Padding.unpad(data, size, style="pkcs7")
+
 elif backend == "cryptography":
     from cryptography.hazmat.primitives.ciphers import Cipher
     from cryptography.hazmat.primitives.ciphers.algorithms import AES
     from cryptography.hazmat.primitives.ciphers.modes import CFB8
+    from cryptography.hazmat.primitives.padding import PKCS7
 
     AES_BLOCK_BYTES = AES.block_size // 8
 
@@ -33,6 +43,14 @@ elif backend == "cryptography":
     def aes_cfb8_decrypt(data, key, iv):
         c = Cipher(AES(key), CFB8(iv)).decryptor()
         return c.update(data) + c.finalize()
+
+    def pkcs7_pad(data, size):
+        p = PKCS7(size * 8).padder()
+        return p.update(data) + p.finalize()
+
+    def pkcs7_unpad(data, size):
+        p = PKCS7(size * 8).unpadder()
+        return p.update(data) + p.finalize()
 
 else:
     raise RuntimeError("unsupported crypto backend %r" % backend)

@@ -5,10 +5,15 @@ from cryptography.hazmat.primitives.ciphers.algorithms import AES
 from cryptography.hazmat.primitives.ciphers.modes import CBC
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives.padding import PKCS7
 import dbus
 import dbus.service
 import os
+
+from .crypto_backend import (
+    AES_BLOCK_BYTES,
+    pkcs7_pad,
+    pkcs7_unpad,
+)
 
 MODP1024_PRIME=0xffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece65381ffffffffffffffff
 MODP1024_GEN=2
@@ -50,10 +55,9 @@ class SecretServiceSession(dbus.service.Object):
         elif self.algorithm == "dh-ietf1024-sha256-aes128-cbc-pkcs7":
             key = self.crypt_key
             iv = os.urandom(AES.block_size//8)
-            p = PKCS7(AES.block_size).padder()
             e = Cipher(AES(self.crypt_key), CBC(iv),
                        backend=default_backend()).encryptor()
-            ct = p.update(input) + p.finalize()
+            ct = pkcs7_pad(input, AES_BLOCK_BYTES)
             ct = e.update(ct) + e.finalize()
             return ct, iv
 
@@ -64,7 +68,6 @@ class SecretServiceSession(dbus.service.Object):
             key = self.crypt_key
             d = Cipher(AES(self.crypt_key), CBC(iv),
                        backend=default_backend()).decryptor()
-            p = PKCS7(AES.block_size).unpadder()
             pt = d.update(input) + d.finalize()
-            pt = p.update(pt) + p.finalize()
+            pt = pkcs7_unpad(pt, AES_BLOCK_BYTES)
             return pt
