@@ -43,11 +43,9 @@ if backend == "cryptodome":
     def dh_modp1024_exchange(peer_pubkey):
         prime = MODP1024_PRIME
         generator = MODP1024_GENERATOR
-        peer_pubkey = int.from_bytes(peer_pubkey, "big")
         our_privkey = randint(1, prime-1)
         our_pubkey = pow(generator, our_privkey, prime)
         shared_key = pow(peer_pubkey, our_privkey, prime)
-        our_pubkey = our_pubkey.to_bytes(1024 // 8, "big")
         shared_key = shared_key.to_bytes(1024 // 8, "big")
         return our_pubkey, shared_key
 
@@ -91,12 +89,10 @@ elif backend == "cryptography":
 
     def dh_modp1024_exchange(peer_pubkey):
         group = dh.DHParameterNumbers(p=MODP1024_PRIME, g=MODP1024_GENERATOR)
-        peer_pubkey = int.from_bytes(peer_pubkey, "big")
         peer_pubkey = dh.DHPublicNumbers(peer_pubkey, group).public_key()
         our_privkey = group.parameters().generate_private_key()
         shared_key = our_privkey.exchange(peer_pubkey)
         our_pubkey = our_privkey.public_key().public_numbers().y
-        our_pubkey = our_pubkey.to_bytes(1024 // 8, "big")
         return our_pubkey, shared_key
 
     def hkdf_sha256_derive(input, nbytes):

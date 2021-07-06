@@ -27,8 +27,10 @@ class SecretServiceSession(dbus.service.Object):
         if self.algorithm == "plain":
             return (dbus.ByteArray(b""), True)
         elif self.algorithm == "dh-ietf1024-sha256-aes128-cbc-pkcs7":
-            output, shared_key = dh_modp1024_exchange(input)
+            peer_pubkey = int.from_bytes(input, "big")
+            our_pubkey, shared_key = dh_modp1024_exchange(peer_pubkey)
             self.crypt_key = hkdf_sha256_derive(shared_key, 128 // 8)
+            output = our_pubkey.to_bytes(1024 // 8, "big")
             return (dbus.ByteArray(output), True)
         else:
             raise dbus.DBusException("org.freedesktop.DBus.Error.NotSupported")
