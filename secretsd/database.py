@@ -92,13 +92,19 @@ class SecretsDatabase():
             self._load_mkey()
             self._load_dkey()
 
-    def _encrypt_buf(self, buf, with_mkey=False):
+    def _encrypt_buf(self, buf, *, with_mkey=False, v=0):
         key = self.mk if with_mkey else self.dk
-        return aes_cfb8_wrap(buf, key)
+        if (v or self.ver) == 2:
+            return aes_cfb8_wrap(buf, key)
+        else:
+            raise NotImplementedError()
 
-    def _decrypt_buf(self, buf, with_mkey=None):
+    def _decrypt_buf(self, buf, *, with_mkey=None, v=0):
         key = self.mk if with_mkey else self.dk
-        return aes_cfb8_unwrap(buf, key)
+        if (v or self.ver) == 2:
+            return aes_cfb8_unwrap(buf, key)
+        else:
+            raise NotImplementedError()
 
     # Schema upgrades
 
@@ -130,7 +136,7 @@ class SecretsDatabase():
         # Generate a "data key"
         print("DB: generating a data key")
         dkey = generate_key()
-        blob = self._encrypt_buf(dkey, with_mkey=True)
+        blob = self._encrypt_buf(dkey, with_mkey=True, v=2)
         cur.execute("INSERT INTO parameters VALUES ('dkey', ?)", (blob,))
         self.dk = dkey
         # Encrypt all currently stored secrets
@@ -138,7 +144,7 @@ class SecretsDatabase():
         res = cur.fetchall()
         for object, blob in res:
             print("DB: encrypting secret %r" % (object,))
-            blob = self._encrypt_buf(blob)
+            blob = self._encrypt_buf(blob, v=2)
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
     def upgrade(self):
