@@ -2,7 +2,9 @@ import base64
 import sqlite3
 import time
 
-from .encryption import generate_key, aes_cfb8_wrap, aes_cfb8_unwrap
+from .encryption import (generate_key,
+                         aes_cfb8_wrap, aes_cfb8_unwrap,
+                         aes_cfb128_wrap, aes_cfb128_unwrap)
 from .external_keys import load_ext_key, store_ext_key
 
 class SecretsDatabase():
@@ -72,13 +74,13 @@ class SecretsDatabase():
             raise RuntimeError("could not load the database key from %r" % (self.kp))
         self.mk = mkey
 
-    def _load_dkey(self):
-        if self.ver == 2:
+    def _load_dkey(self, *, v=0):
+        if (v or self.ver) == 3:
             cur = self.db.cursor()
             cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
             dkey, = cur.fetchone()
             try:
-                dkey = self._decrypt_buf(dkey, with_mkey=True)
+                dkey = self._decrypt_buf(dkey, with_mkey=True, v=3)
             except IOError as e:
                 raise IOError("wrong mkey (%s)" % e)
             if len(dkey) != 32:
@@ -94,14 +96,18 @@ class SecretsDatabase():
 
     def _encrypt_buf(self, buf, *, with_mkey=False, v=0):
         key = self.mk if with_mkey else self.dk
-        if (v or self.ver) == 2:
+        if (v or self.ver) >= 3:
+            return aes_cfb128_wrap(buf, key)
+        elif (v or self.ver) == 2:
             return aes_cfb8_wrap(buf, key)
         else:
             raise NotImplementedError()
 
     def _decrypt_buf(self, buf, *, with_mkey=None, v=0):
         key = self.mk if with_mkey else self.dk
-        if (v or self.ver) == 2:
+        if (v or self.ver) >= 3:
+            return aes_cfb128_unwrap(buf, key)
+        elif (v or self.ver) == 2:
             return aes_cfb8_unwrap(buf, key)
         else:
             raise NotImplementedError()
@@ -147,6 +153,26 @@ class SecretsDatabase():
             blob = self._encrypt_buf(blob, v=2)
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
+    def _upgrade_v2_to_v3(self):
+        # Version 3 uses AES-CFB128 instead of (badly chosen) AES-CFB8
+        cur = self.db.cursor()
+        # Re-encrypt the data key
+        self._load_mkey()
+        cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
+        blob, = cur.fetchone()
+        blob = self._decrypt_buf(blob, with_mkey=True, v=2)
+        blob = self._encrypt_buf(blob, with_mkey=True, v=3)
+        cur.execute("UPDATE parameters SET value = ? WHERE name = 'dkey'", (blob,))
+        # Re-encrypt all currently stored secrets
+        self._load_dkey(v=3)
+        cur.execute("SELECT object, secret FROM secrets")
+        res = cur.fetchall()
+        for object, blob in res:
+            print("DB: re-encrypting secret %r" % (object,))
+            blob = self._decrypt_buf(blob, v=2)
+            blob = self._encrypt_buf(blob, v=3)
+            cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
+
     def upgrade(self):
         print("DB: current database version is %d" % self.get_version())
         if self.get_version() == 0:
@@ -161,6 +187,11 @@ class SecretsDatabase():
             self.db.commit()
             print("DB: vacuuming database")
             self.db.cursor().execute("VACUUM")
+        if self.get_version() == 2:
+            print("DB: upgrading to version %d" % (3,))
+            self._upgrade_v2_to_v3()
+            self.db.cursor().execute("UPDATE version SET version = ?", (3,))
+            self.db.commit()
         self.ver = self.get_version()
         print("DB: new database version is %d" % self.ver)
 
