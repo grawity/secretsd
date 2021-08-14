@@ -63,17 +63,14 @@ class SecretsDatabase():
         store_ext_key(self.kp, base64.b64encode(key).decode())
 
     def _load_mkey(self):
-        if self.ver == 2:
-            print("DB: loading master key from %r" % (self.kp))
-            try:
-                mkey = base64.b64decode(load_ext_key(self.kp))
-                if len(mkey) != 32:
-                    raise IOError("wrong mkey length (expected 32 bytes)")
-            except (KeyError, FileNotFoundError):
-                raise RuntimeError("could not load the database key from %r" % (self.kp))
-            self.mk = mkey
-        else:
-            raise NotImplementedError()
+        print("DB: loading master key from %r" % (self.kp))
+        try:
+            mkey = base64.b64decode(load_ext_key(self.kp))
+            if len(mkey) != 32:
+                raise IOError("wrong mkey length (expected 32 bytes)")
+        except (KeyError, FileNotFoundError):
+            raise RuntimeError("could not load the database key from %r" % (self.kp))
+        self.mk = mkey
 
     def _load_dkey(self):
         if self.ver == 2:
