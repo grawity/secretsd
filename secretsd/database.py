@@ -130,16 +130,16 @@ class SecretsDatabase():
         # Generate a "data key"
         print("DB: generating a data key")
         dkey = generate_key()
-        cur.execute("INSERT INTO parameters VALUES ('dkey', ?)",
-                    (self._encrypt_buf(dkey, with_mkey=True),))
+        blob = self._encrypt_buf(dkey, with_mkey=True)
+        cur.execute("INSERT INTO parameters VALUES ('dkey', ?)", (blob,))
         self.dk = dkey
         # Encrypt all currently stored secrets
         cur.execute("SELECT object, secret FROM secrets")
         res = cur.fetchall()
-        for object, old_blob in res:
+        for object, blob in res:
             print("DB: encrypting secret %r" % (object,))
-            new_blob = self._encrypt_buf(old_blob)
-            cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (new_blob, object))
+            blob = self._encrypt_buf(blob)
+            cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
     def upgrade(self):
         print("DB: current database version is %d" % self.get_version())
