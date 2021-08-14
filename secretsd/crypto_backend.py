@@ -40,10 +40,16 @@ if backend == "cryptodome":
         return AES.new(key, AES.MODE_CBC, iv).decrypt(data)
 
     def aes_cfb8_encrypt(data, key, iv):
-        return AES.new(key, AES.MODE_CFB, iv).encrypt(data)
+        return AES.new(key, AES.MODE_CFB, iv, segment_size=8).encrypt(data)
 
     def aes_cfb8_decrypt(data, key, iv):
-        return AES.new(key, AES.MODE_CFB, iv).decrypt(data)
+        return AES.new(key, AES.MODE_CFB, iv, segment_size=8).decrypt(data)
+
+    def aes_cfb128_encrypt(data, key, iv):
+        return AES.new(key, AES.MODE_CFB, iv, segment_size=128).encrypt(data)
+
+    def aes_cfb128_decrypt(data, key, iv):
+        return AES.new(key, AES.MODE_CFB, iv, segment_size=128).decrypt(data)
 
     def dh_modp1024_exchange(peer_pubkey):
         prime = MODP1024_PRIME
@@ -69,7 +75,7 @@ elif backend == "cryptography":
     from cryptography.hazmat.primitives.asymmetric import dh
     from cryptography.hazmat.primitives.ciphers import Cipher
     from cryptography.hazmat.primitives.ciphers.algorithms import AES
-    from cryptography.hazmat.primitives.ciphers.modes import CBC, CFB8
+    from cryptography.hazmat.primitives.ciphers.modes import CBC, CFB, CFB8
     from cryptography.hazmat.primitives.hashes import SHA256
     from cryptography.hazmat.primitives.kdf.hkdf import HKDF
     from cryptography.hazmat.primitives.padding import PKCS7
@@ -90,6 +96,14 @@ elif backend == "cryptography":
 
     def aes_cfb8_decrypt(data, key, iv):
         c = Cipher(AES(key), CFB8(iv)).decryptor()
+        return c.update(data) + c.finalize()
+
+    def aes_cfb128_encrypt(data, key, iv):
+        c = Cipher(AES(key), CFB(iv)).encryptor()
+        return c.update(data) + c.finalize()
+
+    def aes_cfb128_decrypt(data, key, iv):
+        c = Cipher(AES(key), CFB(iv)).decryptor()
         return c.update(data) + c.finalize()
 
     def dh_modp1024_exchange(peer_pubkey):
