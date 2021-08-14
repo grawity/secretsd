@@ -76,20 +76,20 @@ elif backend == "cryptography":
 
     AES_BLOCK_BYTES = AES.block_size // 8
 
-    def aes_cfb8_encrypt(data, key, iv):
-        c = Cipher(AES(key), CFB8(iv)).encryptor()
-        return c.update(data) + c.finalize()
-
-    def aes_cfb8_decrypt(data, key, iv):
-        c = Cipher(AES(key), CFB8(iv)).decryptor()
-        return c.update(data) + c.finalize()
-
     def aes_cbc_encrypt(data, key, iv):
         c = Cipher(AES(key), CBC(iv)).encryptor()
         return c.update(data) + c.finalize()
 
     def aes_cbc_decrypt(data, key, iv):
         c = Cipher(AES(key), CBC(iv)).decryptor()
+        return c.update(data) + c.finalize()
+
+    def aes_cfb8_encrypt(data, key, iv):
+        c = Cipher(AES(key), CFB8(iv)).encryptor()
+        return c.update(data) + c.finalize()
+
+    def aes_cfb8_decrypt(data, key, iv):
+        c = Cipher(AES(key), CFB8(iv)).decryptor()
         return c.update(data) + c.finalize()
 
     def dh_modp1024_exchange(peer_pubkey):
