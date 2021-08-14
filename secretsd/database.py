@@ -11,6 +11,7 @@ class SecretsDatabase():
         self.kp = key_path
         self.mk = None
         self.dk = None
+        self.ver = 0
         self.initialize()
         self.upgrade()
         self.load_keys()
@@ -62,8 +63,7 @@ class SecretsDatabase():
         store_ext_key(self.kp, base64.b64encode(key).decode())
 
     def _load_mkey(self):
-        v = self.get_version()
-        if v == 2:
+        if self.ver == 2:
             print("DB: loading master key from %r" % (self.kp))
             try:
                 mkey = base64.b64decode(load_ext_key(self.kp))
@@ -76,8 +76,7 @@ class SecretsDatabase():
             raise NotImplementedError()
 
     def _load_dkey(self):
-        v = self.get_version()
-        if v == 2:
+        if self.ver == 2:
             cur = self.db.cursor()
             cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
             dkey, = cur.fetchone()
@@ -92,7 +91,7 @@ class SecretsDatabase():
             raise NotImplementedError()
 
     def load_keys(self):
-        if self.get_version() >= 2:
+        if self.ver >= 2:
             self._load_mkey()
             self._load_dkey()
 
@@ -159,7 +158,8 @@ class SecretsDatabase():
             self.db.commit()
             print("DB: vacuuming database")
             self.db.cursor().execute("VACUUM")
-        print("DB: new database version is %d" % self.get_version())
+        self.ver = self.get_version()
+        print("DB: new database version is %d" % self.ver)
 
     def get_version(self):
         cur = self.db.cursor()
