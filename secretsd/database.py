@@ -87,7 +87,7 @@ class SecretsDatabase():
                 raise IOError("wrong dkey length (expected 32 bytes)")
             self.dk = dkey
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("unknown schema version %r" % (v or self.ver))
 
     def load_keys(self):
         if self.ver >= 2:
@@ -101,7 +101,7 @@ class SecretsDatabase():
         elif (v or self.ver) == 2:
             return aes_cfb8_wrap(buf, key)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("unknown schema version %r" % (v or self.ver))
 
     def _decrypt_buf(self, buf, *, with_mkey=None, v=0):
         key = self.mk if with_mkey else self.dk
@@ -110,7 +110,7 @@ class SecretsDatabase():
         elif (v or self.ver) == 2:
             return aes_cfb8_unwrap(buf, key)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("unknown schema version %r" % (v or self.ver))
 
     # Schema upgrades
 
