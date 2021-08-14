@@ -131,7 +131,7 @@ class SecretsDatabase():
             cur.execute("UPDATE attributes SET object = ? WHERE object = ?",
                         (new_object, old_object))
 
-    def _upgrade_v1_to_v2(self):
+    def _upgrade_v1_to_v3(self):
         # Version 2 encrypts all secrets using the database master key
         cur = self.db.cursor()
         # Generate a "master key"
@@ -142,7 +142,7 @@ class SecretsDatabase():
         # Generate a "data key"
         print("DB: generating a data key")
         dkey = generate_key()
-        blob = self._encrypt_buf(dkey, with_mkey=True, v=2)
+        blob = self._encrypt_buf(dkey, with_mkey=True, v=3)
         cur.execute("INSERT INTO parameters VALUES ('dkey', ?)", (blob,))
         self.dk = dkey
         # Encrypt all currently stored secrets
@@ -150,7 +150,7 @@ class SecretsDatabase():
         res = cur.fetchall()
         for object, blob in res:
             print("DB: encrypting secret %r" % (object,))
-            blob = self._encrypt_buf(blob, v=2)
+            blob = self._encrypt_buf(blob, v=3)
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
     def _upgrade_v2_to_v3(self):
@@ -181,9 +181,9 @@ class SecretsDatabase():
             self.db.cursor().execute("UPDATE version SET version = ?", (1,))
             self.db.commit()
         if self.get_version() == 1:
-            print("DB: upgrading to version %d" % (2,))
-            self._upgrade_v1_to_v2()
-            self.db.cursor().execute("UPDATE version SET version = ?", (2,))
+            print("DB: upgrading to version %d" % (3,))
+            self._upgrade_v1_to_v3()
+            self.db.cursor().execute("UPDATE version SET version = ?", (3,))
             self.db.commit()
             print("DB: vacuuming database")
             self.db.cursor().execute("VACUUM")
