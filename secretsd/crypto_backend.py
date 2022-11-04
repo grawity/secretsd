@@ -72,7 +72,7 @@ if backend == "cryptodome":
     def pkcs7_unpad(data, size):
         return Padding.unpad(data, size, style="pkcs7")
 
-    log.info("using 'PyCryptodome' as crypto backend")
+    log.info("CRYPT: using 'PyCryptodome' as crypto backend")
 
 elif backend == "cryptography":
     from cryptography.hazmat.primitives.asymmetric import dh
@@ -129,7 +129,7 @@ elif backend == "cryptography":
         p = PKCS7(size * 8).unpadder()
         return p.update(data) + p.finalize()
 
-    log.info("using 'python-cryptography' as crypto backend")
+    log.info("CRYPT: using 'python-cryptography' as crypto backend")
 
 else:
     raise RuntimeError("unsupported crypto backend %r" % backend)
