@@ -8,28 +8,26 @@ import sys
 import xdg.BaseDirectory
 
 os.umask(0o077)
-sys.stdout.reconfigure(line_buffering=True)
-logging.basicConfig(level=logging.INFO,
-                    format="%(message)s")
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 from .database import SecretsDatabase
 from .service import SecretService
+
+default_dir = xdg.BaseDirectory.save_data_path("nullroute.eu.org/secretsd")
+default_db_path = os.path.join(default_dir, "secrets.db")
+default_key_loc = "file:%s" % os.path.join(default_dir, "secrets.key")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--db-path", metavar="PATH")
 parser.add_argument("-k", "--key-location", metavar="PATH")
 args = parser.parse_args()
 
-db_dir = xdg.BaseDirectory.save_data_path("nullroute.eu.org/secretsd")
-db_path = os.path.join(db_dir, "secrets.db")
-db_path = args.db_path or db_path
-
-key_path = os.path.join(db_dir, "secrets.key")
-key_path = args.key_location or "file:%s" % key_path
+db_path = args.db_path or default_db_path
+key_loc = args.key_location or default_key_loc
 
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
-sdb = SecretsDatabase(db_path, key_path)
+sdb = SecretsDatabase(db_path, key_loc)
 svc = SecretService(bus, sdb)
 
 loop = GLib.MainLoop()
