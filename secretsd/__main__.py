@@ -4,12 +4,14 @@ import dbus.mainloop.glib
 from gi.repository import GLib
 import logging
 import os
+import sys
 import xdg.BaseDirectory
 
 from .database import SecretsDatabase
 from .service import SecretService
 
 os.umask(0o077)
+sys.stdout.reconfigure(line_buffering=True)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--db-path", metavar="PATH")
