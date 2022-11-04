@@ -50,7 +50,9 @@ def load_ext_key(source):
     if kind == "env":
         return os.environ[rest]
     elif kind == "exec":
+        env = {**os.environb, "ACTION": "load"}
         res = subprocess.run(rest, shell=True,
+                                   env=env,
                                    stdin=subprocess.DEVNULL,
                                    stdout=subprocess.PIPE,
                                    check=True)
@@ -71,12 +73,11 @@ def store_ext_key(source, key):
     if kind == "env":
         raise ValueError("environment is volatile storage, cannot store keys there")
     elif kind == "exec":
-        # XXX: Should there be a way to distinguish whether the command is
-        # invoked for load vs store, or should I just remove storing to exec:
-        # because this is an advanced operation and the user can just emulate
-        # it with a temporary file?
+        env = {**os.environb, "ACTION": "store"}
         res = subprocess.run(rest, shell=True,
+                                   env=env,
                                    input=key.encode(),
+                                   stdout=subprocess.DEVNULL,
                                    check=True)
     elif kind == "file":
         with open(rest, "w", opener=lambda p, f: os.open(p, f, 0o400)) as fh:
