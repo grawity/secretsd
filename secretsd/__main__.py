@@ -8,6 +8,7 @@ import sys
 import xdg.BaseDirectory
 
 os.umask(0o077)
+sys.stdout.reconfigure(line_buffering=True)
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 from .database import SecretsDatabase
@@ -18,8 +19,10 @@ default_db_path = os.path.join(default_dir, "secrets.db")
 default_key_loc = "file:%s" % os.path.join(default_dir, "secrets.key")
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--db-path", metavar="PATH")
-parser.add_argument("-k", "--key-location", metavar="PATH")
+parser.add_argument("-d", "--db-path", metavar="PATH",
+                    help="use alternative secrets.db path")
+parser.add_argument("-k", "--key-location", metavar="TYPE:PATH",
+                    help="specify the master key location")
 args = parser.parse_args()
 
 db_path = args.db_path or default_db_path
