@@ -100,8 +100,8 @@ if __name__ == "__main__":
 
     arg = args.specifier
     if key := args.store_key:
-        print(f"Storing key {key!r} to {arg!r}")
+        print("Storing key %r to %r" % (key, arg))
         store_ext_key(arg, key)
-    print(f"Retrieving key from {arg!r}")
+    print("Retrieving key from %r" % (arg,))
     key = load_ext_key(arg)
-    print(f"The key is {key!r}")
+    print("The key is %r" % (key,))

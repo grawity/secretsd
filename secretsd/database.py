@@ -1,4 +1,5 @@
 import base64
+import logging
 import sqlite3
 import time
 
@@ -6,6 +7,8 @@ from .encryption import (generate_key,
                          aes_cfb8_wrap, aes_cfb8_unwrap,
                          aes_cfb128_wrap, aes_cfb128_unwrap)
 from .external_keys import load_ext_key, store_ext_key
+
+log = logging.getLogger(__name__)
 
 class SecretsDatabase():
     def __init__(self, path, key_path):
@@ -61,11 +64,11 @@ class SecretsDatabase():
     # Encryption keys
 
     def _store_mkey(self, key):
-        print("DB: storing master key to %r" % (self.kp))
+        log.info("DB: storing master key to %r", self.kp)
         store_ext_key(self.kp, base64.b64encode(key).decode())
 
     def _load_mkey(self):
-        print("DB: loading master key from %r" % (self.kp))
+        log.info("DB: loading master key from %r", self.kp)
         try:
             mkey = base64.b64decode(load_ext_key(self.kp))
             if len(mkey) != 32:
@@ -123,7 +126,7 @@ class SecretsDatabase():
         for (old_object,) in res:
             item_id = old_object.split("/")[-1]
             new_object = "/org/freedesktop/secrets/item/%s" % item_id
-            print("DB: moving object %r => %r" % (old_object, new_object))
+            log.info("DB: moving object %r => %r", old_object, new_object)
             cur.execute("UPDATE items      SET object = ? WHERE object = ?",
                         (new_object, old_object))
             cur.execute("UPDATE secrets    SET object = ? WHERE object = ?",
@@ -135,12 +138,12 @@ class SecretsDatabase():
         # Version 2 encrypts all secrets using the database master key
         cur = self.db.cursor()
         # Generate a "master key"
-        print("DB: generating a master key")
+        log.info("DB: generating a master key")
         mkey = generate_key()
         self._store_mkey(mkey)
         self.mk = mkey
         # Generate a "data key"
-        print("DB: generating a data key")
+        log.info("DB: generating a data key")
         dkey = generate_key()
         blob = self._encrypt_buf(dkey, with_mkey=True, v=3)
         cur.execute("INSERT INTO parameters VALUES ('dkey', ?)", (blob,))
@@ -149,7 +152,7 @@ class SecretsDatabase():
         cur.execute("SELECT object, secret FROM secrets")
         res = cur.fetchall()
         for object, blob in res:
-            print("DB: encrypting secret %r" % (object,))
+            log.info("DB: encrypting secret %r", object)
             blob = self._encrypt_buf(blob, v=3)
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
@@ -168,32 +171,32 @@ class SecretsDatabase():
         cur.execute("SELECT object, secret FROM secrets")
         res = cur.fetchall()
         for object, blob in res:
-            print("DB: re-encrypting secret %r" % (object,))
+            log.info("DB: re-encrypting secret %r", object)
             blob = self._decrypt_buf(blob, v=2)
             blob = self._encrypt_buf(blob, v=3)
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
     def upgrade(self):
-        print("DB: current database version is %d" % self.get_version())
+        log.info("DB: current database version is %d", self.get_version())
         if self.get_version() == 0:
-            print("DB: upgrading to version %d" % (1,))
+            log.info("DB: upgrading to version %d", 1)
             self._upgrade_v0_to_v1()
             self.db.cursor().execute("UPDATE version SET version = ?", (1,))
             self.db.commit()
         if self.get_version() == 1:
-            print("DB: upgrading to version %d" % (3,))
+            log.info("DB: upgrading to version %d", 3)
             self._upgrade_v1_to_v3()
             self.db.cursor().execute("UPDATE version SET version = ?", (3,))
             self.db.commit()
-            print("DB: vacuuming database")
+            log.info("DB: vacuuming database")
             self.db.cursor().execute("VACUUM")
         if self.get_version() == 2:
-            print("DB: upgrading to version %d" % (3,))
+            log.info("DB: upgrading to version %d", 3)
             self._upgrade_v2_to_v3()
             self.db.cursor().execute("UPDATE version SET version = ?", (3,))
             self.db.commit()
         self.ver = self.get_version()
-        print("DB: new database version is %d" % self.ver)
+        log.info("DB: new database version is %d", self.ver)
 
     def get_version(self):
         cur = self.db.cursor()
@@ -218,13 +221,13 @@ class SecretsDatabase():
             oid = 0
             cur.execute("INSERT INTO sequence VALUES (?)", (oid + 1,))
         self.db.commit()
-        print("DB: allocated new object ID %r" % oid)
+        log.info("DB: allocated new object ID %r", oid)
         return oid
 
     # Collections
 
     def add_collection(self, object, label):
-        print("DB: adding collection %r with label %r" % (object, label))
+        log.info("DB: adding collection %r with label %r", object, label)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("INSERT INTO collections VALUES (?,?,?,?)", (object, label, now, now))
@@ -239,14 +242,14 @@ class SecretsDatabase():
         return bool(self.get_collection_metadata(object))
 
     def get_collection_metadata(self, object):
-        print("DB: getting collection metadata for %r" % (object,))
+        log.info("DB: getting collection metadata for %r", object)
         cur = self.db.cursor()
         cur.execute("SELECT label, created, modified FROM collections WHERE object = ?",
                     (object,))
         return cur.fetchone()
 
     def set_collection_label(self, object, label):
-        print("DB: setting label for %r to %r" % (object, label))
+        log.info("DB: setting label for %r to %r", object, label)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("UPDATE collections SET label = ?, modified = ? WHERE object = ?",
@@ -254,7 +257,7 @@ class SecretsDatabase():
         self.db.commit()
 
     def delete_collection(self, object):
-        print("DB: deleting collection %r" % (object,))
+        log.info("DB: deleting collection %r", object)
         cur = self.db.cursor()
         subquery = "SELECT object FROM attributes" \
                    " WHERE attribute = 'xdg:collection' AND value = ?"
@@ -268,7 +271,7 @@ class SecretsDatabase():
     # Aliases
 
     def add_alias(self, alias, target):
-        print("DB: adding alias %r -> %r" % (alias, target))
+        log.info("DB: adding alias %r -> %r", alias, target)
         cur = self.db.cursor()
         cur.execute("DELETE FROM aliases WHERE alias = ?", (alias,))
         cur.execute("INSERT INTO aliases VALUES (?,?)", (alias, target))
@@ -280,14 +283,14 @@ class SecretsDatabase():
         return cur.fetchall()
 
     def resolve_alias(self, alias):
-        print("DB: resolving alias %r" % (alias,))
+        log.info("DB: resolving alias %r", alias)
         cur = self.db.cursor()
         cur.execute("SELECT target FROM aliases WHERE alias = ?", (alias,))
         r = cur.fetchone()
         return r[0] if r else None
 
     def delete_alias(self, alias):
-        print("DB: deleting alias %r" % (alias,))
+        log.info("DB: deleting alias %r", alias)
         cur = self.db.cursor()
         cur.execute("DELETE FROM aliases WHERE alias = ?", (alias,))
         self.db.commit()
@@ -310,7 +313,7 @@ class SecretsDatabase():
         parvs = []
         for k, v in match_attrs.items():
             parvs += [str(k), str(v)]
-        print("DB: searching for %r" % parvs)
+        log.info("DB: searching for %r", parvs)
         cur = self.db.cursor()
         cur.execute(qry, parvs)
         return [r[0] for r in cur.fetchall()]
@@ -319,14 +322,14 @@ class SecretsDatabase():
         return bool(self.get_item_metadata(object))
 
     def get_item_metadata(self, object):
-        print("DB: getting metadata for %r" % object)
+        log.info("DB: getting metadata for %r", object)
         cur = self.db.cursor()
         cur.execute("SELECT label, created, modified FROM items WHERE object = ?",
                     (object,))
         return cur.fetchone()
 
     def set_item_label(self, object, label):
-        print("DB: setting label for %r to %r" % (object, label))
+        log.info("DB: setting label for %r to %r", object, label)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("UPDATE items SET label = ?, modified = ? WHERE object = ?",
@@ -334,13 +337,13 @@ class SecretsDatabase():
         self.db.commit()
 
     def get_item_attributes(self, object):
-        print("DB: getting attrs for %r" % object)
+        log.info("DB: getting attrs for %r", object)
         cur = self.db.cursor()
         cur.execute("SELECT attribute, value FROM attributes WHERE object = ?", (object,))
         return {k: v for k, v in cur.fetchall()}
 
     def set_item_attributes(self, object, attrs):
-        print("DB: setting attrs for %r to %r" % (object, attrs))
+        log.info("DB: setting attrs for %r to %r", object, attrs)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("DELETE FROM attributes WHERE object = ?", (object,))
@@ -350,14 +353,14 @@ class SecretsDatabase():
         self.db.commit()
 
     def get_secret(self, object):
-        print("DB: getting secret for %r" % object)
+        log.info("DB: getting secret for %r", object)
         cur = self.db.cursor()
         cur.execute("SELECT secret, type FROM secrets WHERE object = ?", (object,))
         secret, sec_type = cur.fetchone()
         return self._decrypt_buf(secret), sec_type
 
     def set_secret(self, object, secret, sec_type):
-        print("DB: updating secret for %r" % object)
+        log.info("DB: updating secret for %r", object)
         if hasattr(secret, "encode"):
             raise ValueError("secret needs to be bytes, not str")
         now = int(time.time())
@@ -369,7 +372,7 @@ class SecretsDatabase():
         self.db.commit()
 
     def delete_item(self, object):
-        print("DB: deleting item %r" % object)
+        log.info("DB: deleting item %r", object)
         cur = self.db.cursor()
         cur.execute("DELETE FROM attributes WHERE object = ?", (object,))
         cur.execute("DELETE FROM secrets WHERE object = ?", (object,))

@@ -1,3 +1,4 @@
+import logging
 import os
 
 __all__ = [
@@ -11,6 +12,8 @@ __all__ = [
     "pkcs7_pad",
     "pkcs7_unpad",
 ]
+
+log = logging.getLogger(__name__)
 
 # Second Oakley group (RFC 2409), to be used as "dh-ietf1024" in the 'Secret
 # Service' API. Don't look at me. I didn't write the spec.
@@ -69,7 +72,7 @@ if backend == "cryptodome":
     def pkcs7_unpad(data, size):
         return Padding.unpad(data, size, style="pkcs7")
 
-    print("using 'PyCryptodome' as crypto backend")
+    log.info("using 'PyCryptodome' as crypto backend")
 
 elif backend == "cryptography":
     from cryptography.hazmat.primitives.asymmetric import dh
@@ -126,7 +129,7 @@ elif backend == "cryptography":
         p = PKCS7(size * 8).unpadder()
         return p.update(data) + p.finalize()
 
-    print("using 'python-cryptography' as crypto backend")
+    log.info("using 'python-cryptography' as crypto backend")
 
 else:
     raise RuntimeError("unsupported crypto backend %r" % backend)

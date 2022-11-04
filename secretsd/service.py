@@ -2,6 +2,7 @@ from collections import defaultdict
 import dbus
 import dbus.lowlevel
 import dbus.service
+import logging
 import time
 
 from .collection import SecretServiceCollectionFallback
@@ -9,6 +10,8 @@ from .exception import *
 from .item import SecretServiceItemFallback
 from .session import SecretServiceSession
 from .util import BusObjectWithProperties, NullObject
+
+log = logging.getLogger(__name__)
 
 def encode_path_component(value):
     return "".join([c if c.isalnum() else "_%02x" % ord(c) for c in value])
@@ -127,7 +130,7 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
 
     @dbus.service.method("org.freedesktop.Secret.Service", "ao", "aoo")
     def Lock(self, objects):
-        print("TODO: Service.Lock(%r)" % objects)
+        log.warn("TODO: Service.Lock(%r)", objects)
         raise NotYetImplementedException()
 
     @dbus.service.method("org.freedesktop.Secret.Service", "ao", "aoo")

@@ -12,6 +12,8 @@ from .service import SecretService
 
 os.umask(0o077)
 sys.stdout.reconfigure(line_buffering=True)
+logging.basicConfig(level=logging.DEBUG,
+                    format="%(message)s")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--db-path", metavar="PATH")
