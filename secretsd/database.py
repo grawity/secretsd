@@ -309,7 +309,7 @@ class SecretsDatabase():
         qry = " INTERSECT ".join([qry] * len(match_attrs))
         parvs = []
         for k, v in match_attrs.items():
-            parvs += [k, v]
+            parvs += [str(k), str(v)]
         print("DB: searching for %r" % parvs)
         cur = self.db.cursor()
         cur.execute(qry, parvs)
