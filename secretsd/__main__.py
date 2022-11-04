@@ -7,13 +7,13 @@ import os
 import sys
 import xdg.BaseDirectory
 
-from .database import SecretsDatabase
-from .service import SecretService
-
 os.umask(0o077)
 sys.stdout.reconfigure(line_buffering=True)
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format="%(message)s")
+
+from .database import SecretsDatabase
+from .service import SecretService
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--db-path", metavar="PATH")
