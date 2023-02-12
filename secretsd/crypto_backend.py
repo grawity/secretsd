@@ -28,7 +28,7 @@ MODP1024_GENERATOR = 2
 backend = os.environ.get("CRYPTO_BACKEND", "cryptography")
 
 if backend == "cryptodome":
-    log.info("using crypt backend %r", "PyCryptodome")
+    log.info("using crypto backend %r", "PyCryptodome")
 
     from Crypto.Cipher import AES
     from Crypto.Hash import SHA256
@@ -75,7 +75,7 @@ if backend == "cryptodome":
         return Padding.unpad(data, size, style="pkcs7")
 
 elif backend == "cryptography":
-    log.info("using crypt backend %r", "python-cryptography")
+    log.info("using crypto backend %r", "python-cryptography")
 
     from cryptography.hazmat.primitives.asymmetric import dh
     from cryptography.hazmat.primitives.ciphers import Cipher
