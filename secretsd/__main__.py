@@ -19,7 +19,7 @@ parser.add_argument("-v", "--verbose", action="store_true",
                     help="enable detailed logging")
 args = parser.parse_args()
 
-# Set up logging and environment
+# Set up logging
 
 log_level = [logging.INFO, logging.DEBUG][args.verbose]
 if not (args.no_syslog or sys.stderr.isatty()):
@@ -33,6 +33,8 @@ logging.basicConfig(handlers=[log_handler],
                     level=log_level,
                     format=log_format)
 
+# Determine file locations
+
 default_dir = xdg.BaseDirectory.save_data_path("nullroute.eu.org/secretsd")
 if not os.path.exists(default_dir):
     default_dir = xdg.BaseDirectory.save_data_path("nullroute.lt/secretsd")
@@ -42,14 +44,26 @@ if not args.db_path:
 if not args.db_path:
     args.db_path = os.path.join(default_dir, "secrets.db")
 
-os.umask(0o077)
-os.chdir(os.path.dirname(args.db_path))
 os.environ["SECRETSD_DIR"] = os.path.dirname(args.db_path)
 
 if not args.key_location:
     args.key_location = os.environ.get("SECRETSD_KEY")
 if not args.key_location:
     args.key_location = "file:${SECRETSD_DIR}/secrets.key"
+
+# Set up other environment
+
+os.umask(0o077)
+os.chdir(os.path.dirname(args.db_path))
+
+if sys.platform == "linux":
+    try:
+        import prctl
+    except ImportError:
+        logging.debug("failed to import prctl; core dumps remain enabled")
+    else:
+        logging.debug("using prctl.set_dumpable() to disable core dumps")
+        prctl.set_dumpable(False)
 
 # Import components after logging is set up
 
