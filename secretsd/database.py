@@ -162,6 +162,7 @@ class SecretsDatabase():
         cur = self.db.cursor()
         # Re-encrypt the data key
         self._load_mkey()
+        log.info("DB: re-encrypting data key")
         cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
         blob, = cur.fetchone()
         blob = self._decrypt_buf(blob, with_mkey=True, v=2)
