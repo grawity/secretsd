@@ -57,5 +57,7 @@ bus = dbus.SessionBus()
 sdb = SecretsDatabase(args.db_path, args.key_location)
 svc = SecretService(bus, sdb)
 
+logging.debug("starting main loop")
+
 loop = GLib.MainLoop()
 loop.run()
