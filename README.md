@@ -41,3 +41,5 @@ For now, all secrets are encrypted using a single "database key", which is store
 (As secretsd is supposed to be a background service, it is strongly advised to _not_ use an external program which would show interactive prompts. In particular avoid helpers which use libsecret, for hopefully obvious reasons – this includes GnuPG, as its Pinentry tries to load passphrases from libsecret!)
 
 Individually encrypted collections are not yet supported, but planned in the future. (This will most likely be a fully separate layer of encryption, using a password-derived key in addition to the database key.)
+
+Secretsd can use either PyCryptodome or python-cryptography. Set `CRYPTO_BACKEND=` to either `cryptograpy` or `cryptodome` depending on which one works better (i.e. doesn't try to spawn gcc a dozen times on startup, etc).
