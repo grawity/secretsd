@@ -15,6 +15,8 @@ from .database import SecretsDatabase
 from .service import SecretService
 
 default_dir = xdg.BaseDirectory.save_data_path("nullroute.eu.org/secretsd")
+if not os.path.exists(default_dir):
+    default_dir = xdg.BaseDirectory.save_data_path("nullroute.lt/secretsd")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--db-path", metavar="PATH",
