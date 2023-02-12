@@ -11,7 +11,7 @@ import re
 import subprocess
 
 class KWalletClient():
-    app_id = "org.eu.nullroute.Secretsd"
+    app_id = "lt.nullroute.Secretsd"
     folder = "Passwords"
 
     def __init__(self):
