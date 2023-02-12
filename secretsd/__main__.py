@@ -16,7 +16,6 @@ parser.add_argument("-v", "--verbose", action="store_true",
                     help="enable detailed logging")
 args = parser.parse_args()
 
-sys.stdout.reconfigure(line_buffering=True)
 logging.basicConfig(level=[logging.INFO, logging.DEBUG][args.verbose],
                     format="%(message)s")
 
