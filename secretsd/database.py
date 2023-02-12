@@ -181,7 +181,7 @@ class SecretsDatabase():
 
     def upgrade(self):
         orig_ver = self.get_version()
-        log.info("DB: current database version is %d", orig_ver)
+        log.debug("DB: current database version is %d", orig_ver)
         if self.get_version() == 0:
             log.info("DB: upgrading to version %d", 1)
             self._upgrade_v0_to_v1()
