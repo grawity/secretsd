@@ -58,6 +58,8 @@ def load_ext_key(source):
                                    check=True)
         return res.stdout.decode().strip()
     elif kind == "file":
+        rest = os.path.expanduser(rest)
+        rest = os.path.expandvars(rest)
         with open(rest, "r") as fh:
             return fh.read().strip()
     elif kind == "kwallet":
@@ -80,6 +82,8 @@ def store_ext_key(source, key):
                                    stdout=subprocess.DEVNULL,
                                    check=True)
     elif kind == "file":
+        rest = os.path.expanduser(rest)
+        rest = os.path.expandvars(rest)
         with open(rest, "w", opener=lambda p, f: os.open(p, f, 0o400)) as fh:
             fh.write(key)
     elif kind == "kwallet":
