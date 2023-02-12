@@ -32,6 +32,9 @@ if not args.db_path:
 os.environ["SECRETSD_DIR"] = os.path.dirname(args.db_path)
 
 if not args.key_location:
+    args.key_location = os.environ.get("SECRETSD_KEY")
+
+if not args.key_location:
     args.key_location = "file:${SECRETSD_DIR}/secrets.key"
 
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
