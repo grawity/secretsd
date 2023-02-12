@@ -1,8 +1,11 @@
 import dbus
 import dbus.service
+import logging
 from .exception import NoSuchObjectException
 from .item import SecretServiceItemFallback
 from .util import BusObjectWithProperties, NullObject
+
+log = logging.getLogger(__name__)
 
 class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWithProperties):
     ROOT = "/org/freedesktop/secrets/collection"
@@ -101,6 +104,7 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
     @dbus.service.method("org.freedesktop.Secret.Collection", "", "o",
                          path_keyword="path")
     def Delete(self, path=None):
+        log.debug("BUS: [%r].Delete()", path)
         path = self.resolve_path(path)
         self.service.db.delete_collection(path)
         self.service.CollectionDeleted(path)
@@ -112,6 +116,7 @@ class SecretServiceCollectionFallback(dbus.service.FallbackObject, BusObjectWith
     @dbus.service.method("org.freedesktop.Secret.Collection", "a{ss}", "ao",
                          path_keyword="path")
     def SearchItems(self, attributes, path=None):
+        log.debug("BUS: [%r].SearchItems(attributes=%r)", path, attributes)
         path = self.resolve_path(path)
         attributes["xdg:collection"] = path
         items = self.service.db.find_items(attributes)
