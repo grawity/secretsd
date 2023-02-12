@@ -28,6 +28,8 @@ MODP1024_GENERATOR = 2
 backend = os.environ.get("CRYPTO_BACKEND", "cryptography")
 
 if backend == "cryptodome":
+    log.info("using crypt backend %r", "PyCryptodome")
+
     from Crypto.Cipher import AES
     from Crypto.Hash import SHA256
     from Crypto.Protocol.KDF import HKDF
@@ -72,9 +74,9 @@ if backend == "cryptodome":
     def pkcs7_unpad(data, size):
         return Padding.unpad(data, size, style="pkcs7")
 
-    log.info("CRYPT: using 'PyCryptodome' as crypto backend")
-
 elif backend == "cryptography":
+    log.info("using crypt backend %r", "python-cryptography")
+
     from cryptography.hazmat.primitives.asymmetric import dh
     from cryptography.hazmat.primitives.ciphers import Cipher
     from cryptography.hazmat.primitives.ciphers.algorithms import AES
@@ -129,8 +131,6 @@ elif backend == "cryptography":
     def pkcs7_unpad(data, size):
         p = PKCS7(size * 8).unpadder()
         return p.update(data) + p.finalize()
-
-    log.info("CRYPT: using 'python-cryptography' as crypto backend")
 
 else:
     raise RuntimeError("unsupported crypto backend %r" % backend)
