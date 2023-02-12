@@ -7,13 +7,9 @@ import os
 import sys
 import xdg.BaseDirectory
 
-default_dir = xdg.BaseDirectory.save_data_path("nullroute.eu.org/secretsd")
-if not os.path.exists(default_dir):
-    default_dir = xdg.BaseDirectory.save_data_path("nullroute.lt/secretsd")
-
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--db-path", metavar="PATH",
-                    help="use alternative secrets.db path")
+                    help="specify the path to secrets.db")
 parser.add_argument("-k", "--key-location", metavar="TYPE:PATH",
                     help="specify the master key location")
 parser.add_argument("-v", "--verbose", action="store_true",
@@ -23,6 +19,10 @@ args = parser.parse_args()
 sys.stdout.reconfigure(line_buffering=True)
 logging.basicConfig(level=[logging.INFO, logging.DEBUG][args.verbose],
                     format="%(message)s")
+
+default_dir = xdg.BaseDirectory.save_data_path("nullroute.eu.org/secretsd")
+if not os.path.exists(default_dir):
+    default_dir = xdg.BaseDirectory.save_data_path("nullroute.lt/secretsd")
 
 if not args.db_path:
     args.db_path = os.environ.get("SECRETSD_DIR")
