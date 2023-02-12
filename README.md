@@ -36,6 +36,7 @@ For now, all secrets are encrypted using a single "database key", which is store
     secretsd -k env:DATABASE_KEY
     secretsd -k kwallet:
     secretsd -k exec:"pass Apps/secretsd"
+    secretsd -k exec:"tpm_unseal -z -i \$SECRETSD_DIR/secrets.key.tpm"
 
 (As secretsd is supposed to be a background service, it is strongly advised to _not_ use an external program which would show interactive prompts. In particular avoid helpers which use libsecret, for hopefully obvious reasons – this includes GnuPG, as its Pinentry tries to load passphrases from libsecret!)
 
