@@ -9,7 +9,6 @@ import xdg.BaseDirectory
 
 os.umask(0o077)
 sys.stdout.reconfigure(line_buffering=True)
-logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 from .database import SecretsDatabase
 from .service import SecretService
@@ -23,7 +22,12 @@ parser.add_argument("-d", "--db-path", metavar="PATH",
                     help="use alternative secrets.db path")
 parser.add_argument("-k", "--key-location", metavar="TYPE:PATH",
                     help="specify the master key location")
+parser.add_argument("-v", "--verbose", action="store_true",
+                    help="enable detailed logging")
 args = parser.parse_args()
+
+logging.basicConfig(level=[logging.INFO, logging.DEBUG][args.verbose],
+                    format="%(message)s")
 
 if not args.db_path:
     args.db_path = os.environ.get("SECRETSD_DIR")
