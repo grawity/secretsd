@@ -19,6 +19,8 @@ parser.add_argument("-v", "--verbose", action="store_true",
                     help="enable detailed logging")
 args = parser.parse_args()
 
+# Set up logging and environment
+
 log_level = [logging.INFO, logging.DEBUG][args.verbose]
 if not (args.no_syslog or sys.stderr.isatty()):
     log_handler = logging.handlers.SysLogHandler(address="/dev/log")
@@ -48,6 +50,8 @@ if not args.key_location:
     args.key_location = os.environ.get("SECRETSD_KEY")
 if not args.key_location:
     args.key_location = "file:${SECRETSD_DIR}/secrets.key"
+
+# Import components after logging is set up
 
 from .database import SecretsDatabase
 from .service import SecretService
