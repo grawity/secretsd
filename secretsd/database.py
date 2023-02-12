@@ -179,7 +179,8 @@ class SecretsDatabase():
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
     def upgrade(self):
-        log.info("DB: current database version is %d", self.get_version())
+        orig_ver = self.get_version()
+        log.info("DB: current database version is %d", orig_ver)
         if self.get_version() == 0:
             log.info("DB: upgrading to version %d", 1)
             self._upgrade_v0_to_v1()
@@ -198,7 +199,8 @@ class SecretsDatabase():
             self.db.cursor().execute("UPDATE version SET version = ?", (3,))
             self.db.commit()
         self.ver = self.get_version()
-        log.info("DB: new database version is %d", self.ver)
+        if self.ver != orig_ver:
+            log.info("DB: new database version is %d", self.ver)
 
     def get_version(self):
         cur = self.db.cursor()
