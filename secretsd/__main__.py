@@ -26,9 +26,11 @@ args = parser.parse_args()
 if not args.db_path:
     args.db_path = os.path.join(default_dir, "secrets.db")
 
+# For external keys
+os.environ["SECRETSD_DIR"] = os.path.dirname(args.db_path)
+
 if not args.key_location:
-    args.key_location = "file:%s" % os.path.join(os.path.dirname(args.db_path),
-                                                 "secrets.key")
+    args.key_location = os.path.expandvars("file:${SECRETSD_DIR}/secrets.key")
 
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
