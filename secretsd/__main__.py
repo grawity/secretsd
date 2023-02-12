@@ -15,8 +15,6 @@ from .database import SecretsDatabase
 from .service import SecretService
 
 default_dir = xdg.BaseDirectory.save_data_path("nullroute.eu.org/secretsd")
-default_db_path = os.path.join(default_dir, "secrets.db")
-default_key_loc = "file:%s" % os.path.join(default_dir, "secrets.key")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--db-path", metavar="PATH",
@@ -25,12 +23,16 @@ parser.add_argument("-k", "--key-location", metavar="TYPE:PATH",
                     help="specify the master key location")
 args = parser.parse_args()
 
-db_path = args.db_path or default_db_path
-key_loc = args.key_location or default_key_loc
+if not args.db_path:
+    args.db_path = os.path.join(default_dir, "secrets.db")
+
+if not args.key_location:
+    args.key_location = "file:%s" % os.path.join(os.path.dirname(args.db_path),
+                                                 "secrets.key")
 
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 bus = dbus.SessionBus()
-sdb = SecretsDatabase(db_path, key_loc)
+sdb = SecretsDatabase(args.db_path, args.key_location)
 svc = SecretService(bus, sdb)
 
 loop = GLib.MainLoop()
