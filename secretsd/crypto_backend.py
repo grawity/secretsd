@@ -110,7 +110,8 @@ elif backend == "cryptography":
         return c.update(data) + c.finalize()
 
     def dh_modp1024_exchange(peer_pubkey):
-        group = dh.DHParameterNumbers(p=MODP1024_PRIME, g=MODP1024_GENERATOR)
+        group = dh.DHParameterNumbers(p=MODP1024_PRIME,
+                                      g=MODP1024_GENERATOR)
         peer_pubkey = dh.DHPublicNumbers(peer_pubkey, group).public_key()
         our_privkey = group.parameters().generate_private_key()
         shared_key = our_privkey.exchange(peer_pubkey)
