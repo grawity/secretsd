@@ -14,14 +14,6 @@ KEY_SIZE_BYTES = 32
 
 SHA256_HMAC_BYTES = 32
 
-def _xor_bytes(a, b):
-    assert(len(a) == len(b))
-    return bytes([ax ^ bx for ax, bx in zip(a, b)])
-
-def _fold_key(buf):
-    assert(len(buf) == 32)
-    return _xor_bytes(buf[:16], buf[16:])
-
 def generate_key():
     return os.urandom(KEY_SIZE_BYTES)
 
