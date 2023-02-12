@@ -64,18 +64,19 @@ class SecretsDatabase():
     # Encryption keys
 
     def _store_mkey(self, key):
-        log.info("DB: storing key to %r", self.kp)
+        log.debug("DB: storing key to %r", self.kp)
         store_ext_key(self.kp, base64.b64encode(key).decode())
+        log.debug("DB: database key stored")
 
     def _load_mkey(self):
-        log.info("DB: loading key from %r", self.kp)
+        log.debug("DB: loading key from %r", self.kp)
         try:
             mkey = base64.b64decode(load_ext_key(self.kp))
             if len(mkey) != 32:
                 raise IOError("wrong mkey length (expected 32 bytes)")
         except (KeyError, FileNotFoundError):
             raise RuntimeError("could not load the database key from %r" % (self.kp))
-        log.info("DB: database key loaded")
+        log.debug("DB: database key loaded")
         self.mk = mkey
 
     def _load_dkey(self, *, v=0):
@@ -225,7 +226,7 @@ class SecretsDatabase():
             oid = 0
             cur.execute("INSERT INTO sequence VALUES (?)", (oid + 1,))
         self.db.commit()
-        log.info("DB: allocated new object ID %r", oid)
+        log.debug("DB: allocated new object ID %r", oid)
         return oid
 
     # Collections
@@ -246,7 +247,7 @@ class SecretsDatabase():
         return bool(self.get_collection_metadata(object))
 
     def get_collection_metadata(self, object):
-        log.info("DB: getting collection metadata for %r", object)
+        log.debug("DB: getting collection metadata for %r", object)
         cur = self.db.cursor()
         cur.execute("SELECT label, created, modified FROM collections WHERE object = ?",
                     (object,))
@@ -326,7 +327,7 @@ class SecretsDatabase():
         return bool(self.get_item_metadata(object))
 
     def get_item_metadata(self, object):
-        log.info("DB: getting metadata for %r", object)
+        log.debug("DB: getting metadata for %r", object)
         cur = self.db.cursor()
         cur.execute("SELECT label, created, modified FROM items WHERE object = ?",
                     (object,))
@@ -341,7 +342,7 @@ class SecretsDatabase():
         self.db.commit()
 
     def get_item_attributes(self, object):
-        log.info("DB: getting attrs for %r", object)
+        log.debug("DB: getting attrs for %r", object)
         cur = self.db.cursor()
         cur.execute("SELECT attribute, value FROM attributes WHERE object = ?", (object,))
         return {k: v for k, v in cur.fetchall()}
@@ -357,7 +358,7 @@ class SecretsDatabase():
         self.db.commit()
 
     def get_secret(self, object):
-        log.info("DB: getting secret for %r", object)
+        log.debug("DB: getting secret for %r", object)
         cur = self.db.cursor()
         cur.execute("SELECT secret, type FROM secrets WHERE object = ?", (object,))
         secret, sec_type = cur.fetchone()
