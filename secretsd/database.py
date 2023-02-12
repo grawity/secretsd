@@ -232,7 +232,7 @@ class SecretsDatabase():
     # Collections
 
     def add_collection(self, object, label):
-        log.info("DB: adding collection %r with label %r", object, label)
+        log.debug("DB: adding collection %r with label %r", object, label)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("INSERT INTO collections VALUES (?,?,?,?)", (object, label, now, now))
@@ -254,7 +254,7 @@ class SecretsDatabase():
         return cur.fetchone()
 
     def set_collection_label(self, object, label):
-        log.info("DB: setting label for %r to %r", object, label)
+        log.debug("DB: setting label for %r to %r", object, label)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("UPDATE collections SET label = ?, modified = ? WHERE object = ?",
@@ -262,7 +262,7 @@ class SecretsDatabase():
         self.db.commit()
 
     def delete_collection(self, object):
-        log.info("DB: deleting collection %r", object)
+        log.debug("DB: deleting collection %r", object)
         cur = self.db.cursor()
         subquery = "SELECT object FROM attributes" \
                    " WHERE attribute = 'xdg:collection' AND value = ?"
@@ -276,7 +276,7 @@ class SecretsDatabase():
     # Aliases
 
     def add_alias(self, alias, target):
-        log.info("DB: adding alias %r -> %r", alias, target)
+        log.debug("DB: adding alias %r -> %r", alias, target)
         cur = self.db.cursor()
         cur.execute("DELETE FROM aliases WHERE alias = ?", (alias,))
         cur.execute("INSERT INTO aliases VALUES (?,?)", (alias, target))
@@ -288,14 +288,14 @@ class SecretsDatabase():
         return cur.fetchall()
 
     def resolve_alias(self, alias):
-        log.info("DB: resolving alias %r", alias)
+        log.debug("DB: resolving alias %r", alias)
         cur = self.db.cursor()
         cur.execute("SELECT target FROM aliases WHERE alias = ?", (alias,))
         r = cur.fetchone()
         return r[0] if r else None
 
     def delete_alias(self, alias):
-        log.info("DB: deleting alias %r", alias)
+        log.debug("DB: deleting alias %r", alias)
         cur = self.db.cursor()
         cur.execute("DELETE FROM aliases WHERE alias = ?", (alias,))
         self.db.commit()
@@ -318,7 +318,7 @@ class SecretsDatabase():
         parvs = []
         for k, v in match_attrs.items():
             parvs += [str(k), str(v)]
-        log.info("DB: searching for %r", parvs)
+        log.debug("DB: searching for %r", parvs)
         cur = self.db.cursor()
         cur.execute(qry, parvs)
         return [r[0] for r in cur.fetchall()]
@@ -334,7 +334,7 @@ class SecretsDatabase():
         return cur.fetchone()
 
     def set_item_label(self, object, label):
-        log.info("DB: setting label for %r to %r", object, label)
+        log.debug("DB: setting label for %r to %r", object, label)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("UPDATE items SET label = ?, modified = ? WHERE object = ?",
@@ -348,7 +348,7 @@ class SecretsDatabase():
         return {k: v for k, v in cur.fetchall()}
 
     def set_item_attributes(self, object, attrs):
-        log.info("DB: setting attrs for %r to %r", object, attrs)
+        log.debug("DB: setting attrs for %r to %r", object, attrs)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("DELETE FROM attributes WHERE object = ?", (object,))
@@ -365,7 +365,7 @@ class SecretsDatabase():
         return self._decrypt_buf(secret), sec_type
 
     def set_secret(self, object, secret, sec_type):
-        log.info("DB: updating secret for %r", object)
+        log.debug("DB: updating secret for %r", object)
         if hasattr(secret, "encode"):
             raise ValueError("secret needs to be bytes, not str")
         now = int(time.time())
@@ -377,7 +377,7 @@ class SecretsDatabase():
         self.db.commit()
 
     def delete_item(self, object):
-        log.info("DB: deleting item %r", object)
+        log.debug("DB: deleting item %r", object)
         cur = self.db.cursor()
         cur.execute("DELETE FROM attributes WHERE object = ?", (object,))
         cur.execute("DELETE FROM secrets WHERE object = ?", (object,))
