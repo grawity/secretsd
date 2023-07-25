@@ -12,9 +12,10 @@ Secretsd is a generic backend for the libsecret API, which is used by various pr
   * python-cryptography (or PyCryptodome)
   * python-dbus
   * python-gobject (3.x)
+  * python-prctl (recommended)
   * python-xdg
 
-Secretsd can use either PyCryptodome or python-cryptography. Set `CRYPTO_BACKEND=` to either `cryptograpy` or `cryptodome` depending on which one works better (i.e. doesn't try to spawn gcc a dozen times on startup, etc).
+Secretsd can use either PyCryptodome or python-cryptography. Set `CRYPTO_BACKEND=` to either `cryptography` or `cryptodome` depending on which one works better (i.e. doesn't try to spawn gcc a dozen times on startup, etc).
 
 ## Installation
 
