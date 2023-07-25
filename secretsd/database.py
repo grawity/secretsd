@@ -5,7 +5,6 @@ import time
 
 from .encryption import (
     generate_key,
-    aes_cfb8_wrap,
     aes_cfb8_unwrap,
     aes_cfb128_wrap,
     aes_cfb128_unwrap,
@@ -108,7 +107,7 @@ class SecretsDatabase():
         if (v or self.ver) >= 3:
             return aes_cfb128_wrap(buf, key)
         elif (v or self.ver) == 2:
-            return aes_cfb8_wrap(buf, key)
+            raise NotImplementedError("encrypt_buf(v=2) shouldn't happen anymore")
         else:
             raise NotImplementedError("unknown schema version %r" % (v or self.ver))
 

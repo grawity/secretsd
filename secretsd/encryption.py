@@ -4,7 +4,6 @@ import os
 
 from .crypto_backend import (
     AES_BLOCK_BYTES,
-    aes_cfb8_encrypt,
     aes_cfb8_decrypt,
     aes_cfb128_encrypt,
     aes_cfb128_decrypt,
@@ -19,12 +18,6 @@ def generate_key():
 
 def sha256_hmac(buf, key):
     return hmac.new(key, buf, digestmod="sha256").digest()
-
-def aes_cfb8_wrap(data, key):
-    iv = os.urandom(AES_BLOCK_BYTES)
-    ct = aes_cfb8_encrypt(data, key, iv)
-    buf = iv + ct
-    return sha256_hmac(buf, key) + buf
 
 def aes_cfb8_unwrap(buf, key):
     mac, buf = buf[:SHA256_HMAC_BYTES], buf[SHA256_HMAC_BYTES:]

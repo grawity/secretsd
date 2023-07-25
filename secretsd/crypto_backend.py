@@ -32,9 +32,6 @@ if backend == "cryptodome":
     def aes_cbc_decrypt(data, key, iv):
         return AES.new(key, AES.MODE_CBC, iv).decrypt(data)
 
-    def aes_cfb8_encrypt(data, key, iv):
-        return AES.new(key, AES.MODE_CFB, iv, segment_size=8).encrypt(data)
-
     def aes_cfb8_decrypt(data, key, iv):
         return AES.new(key, AES.MODE_CFB, iv, segment_size=8).decrypt(data)
 
@@ -81,10 +78,6 @@ elif backend == "cryptography":
 
     def aes_cbc_decrypt(data, key, iv):
         c = Cipher(AES(key), CBC(iv)).decryptor()
-        return c.update(data) + c.finalize()
-
-    def aes_cfb8_encrypt(data, key, iv):
-        c = Cipher(AES(key), CFB8(iv)).encryptor()
         return c.update(data) + c.finalize()
 
     def aes_cfb8_decrypt(data, key, iv):
