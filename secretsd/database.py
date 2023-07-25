@@ -3,9 +3,13 @@ import logging
 import sqlite3
 import time
 
-from .encryption import (generate_key,
-                         aes_cfb8_wrap, aes_cfb8_unwrap,
-                         aes_cfb128_wrap, aes_cfb128_unwrap)
+from .encryption import (
+    generate_key,
+    aes_cfb8_wrap,
+    aes_cfb8_unwrap,
+    aes_cfb128_wrap,
+    aes_cfb128_unwrap,
+)
 from .external_keys import load_ext_key, store_ext_key
 
 log = logging.getLogger(__name__)
