@@ -56,6 +56,9 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
             self.client_objects[sender].append(bus_path)
         return object
 
+    def drop_object(self, bus_path):
+        del self.path_objects[bus_path]
+
     def gc_client(self, sender):
         # TODO: hook this up
         if sender in self.client_objects:

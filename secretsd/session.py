@@ -1,5 +1,6 @@
 import dbus
 import dbus.service
+import logging
 import os
 
 from .crypto_backend import (
@@ -12,11 +13,14 @@ from .crypto_backend import (
     pkcs7_unpad,
 )
 
+log = logging.getLogger(__name__)
+
 class SecretServiceSession(dbus.service.Object):
     ROOT = "/org/freedesktop/secrets/session"
     PATH = "/org/freedesktop/secrets/session/s%d"
 
     def __init__(self, service, bus_path, algorithm):
+        self.service = service
         self.bus_path = bus_path
         self.algorithm = algorithm
         self.kex_done = False
@@ -53,3 +57,7 @@ class SecretServiceSession(dbus.service.Object):
             pt = aes_cbc_decrypt(input, key, iv)
             pt = pkcs7_unpad(pt, AES_BLOCK_BYTES)
             return pt
+
+    @dbus.service.method("org.freedesktop.Secret.Session", "", "")
+    def Close(self):
+        self.service.drop_object(self.bus_path)
