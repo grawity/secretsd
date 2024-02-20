@@ -2,6 +2,7 @@ from collections import defaultdict
 import dbus
 import dbus.lowlevel
 import dbus.service
+import itertools
 import logging
 import time
 
@@ -22,7 +23,7 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         self.db = sdb
         self.bus_name = dbus.service.BusName("org.freedesktop.secrets", self.bus)
         self.path_objects = {}
-        self.next_object = 0
+        self.next_object = itertools.count()
         self.client_objects = defaultdict(list)
 
         super().__init__(self.bus, "/org/freedesktop/secrets")
@@ -44,8 +45,7 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         if persist:
             bus_path = template % self.db.get_next_object_id()
         else:
-            bus_path = template % self.next_object
-            self.next_object += 1
+            bus_path = template % next(self.next_object)
         return bus_path
 
     def make_object(self, sender, persist, type, *args, **kwargs):
