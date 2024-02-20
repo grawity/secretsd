@@ -89,10 +89,7 @@ class SecretServiceItemFallback(dbus.service.FallbackObject, BusObjectWithProper
         session = self.service.path_objects[session]
         sec_data, sec_type = self.service.db.get_secret(path)
         sec_ct, sec_iv = session.encrypt(sec_data)
-        return (session.bus_path,
-                sec_iv or b"",
-                sec_ct,
-                sec_type)
+        return (session.bus_path, sec_iv, sec_ct, sec_type)
 
     @dbus.service.method("org.freedesktop.Secret.Item", "(oayays)", "",
                          path_keyword="path")

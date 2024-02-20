@@ -41,7 +41,7 @@ class SecretServiceSession(dbus.service.Object):
 
     def encrypt(self, input):
         if self.algorithm == "plain":
-            return input, None
+            return input, b""
         elif self.algorithm == "dh-ietf1024-sha256-aes128-cbc-pkcs7":
             key = self.crypt_key
             iv = os.urandom(AES_BLOCK_BYTES)
