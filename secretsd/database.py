@@ -306,12 +306,14 @@ class SecretsDatabase():
     # Items
 
     def add_item(self, object, label, attrs, secret, sec_type):
+        log.debug("DB: adding item %r -> %r", label, attrs)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("INSERT INTO items VALUES (?,?,?,?)", (object, label, now, now))
         for key, val in attrs.items():
             cur.execute("INSERT INTO attributes VALUES (?,?,?)", (object, key, val))
-        cur.execute("INSERT INTO secrets VALUES (?,?,?)", (object, self._encrypt_buf(secret),
+        cur.execute("INSERT INTO secrets VALUES (?,?,?)", (object,
+                                                           self._encrypt_buf(secret),
                                                            sec_type))
         self.db.commit()
 
