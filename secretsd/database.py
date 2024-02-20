@@ -306,7 +306,7 @@ class SecretsDatabase():
     # Items
 
     def add_item(self, object, label, attrs, secret, sec_type):
-        log.debug("DB: adding item %r -> %r", label, attrs)
+        log.info("adding item \"%s\"", label)
         now = int(time.time())
         cur = self.db.cursor()
         cur.execute("INSERT INTO items VALUES (?,?,?,?)", (object, label, now, now))
