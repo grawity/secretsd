@@ -8,5 +8,5 @@ setup(name="secretsd",
       author_email="grawity@gmail.com",
       license="MIT",
       packages=["secretsd"],
-      install_requires=["pycryptodome"],
+      install_requires=["dbus", "platformdirs", "pycryptodome"],
       entry_points={"console_scripts": ["secretsd = secretsd.__main__:run"]})

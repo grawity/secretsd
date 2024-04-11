@@ -5,8 +5,8 @@ from gi.repository import GLib
 import logging
 import logging.handlers
 import os
+import platformdirs
 import sys
-import xdg.BaseDirectory
 
 def run():
     parser = argparse.ArgumentParser()
@@ -36,9 +36,9 @@ def run():
 
     # Determine file locations
 
-    default_dir = xdg.BaseDirectory.save_data_path("nullroute.eu.org/secretsd")
+    default_dir = platformdirs.user_data_path("nullroute.eu.org/secretsd")
     if not os.path.exists(default_dir):
-        default_dir = xdg.BaseDirectory.save_data_path("nullroute.lt/secretsd")
+        default_dir = platformdirs.user_data_path("nullroute.lt/secretsd")
 
     if not args.db_path:
         args.db_path = os.environ.get("SECRETSD_DIR")
