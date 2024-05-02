@@ -76,7 +76,7 @@ def store_ext_key(source, key):
         raise ValueError("environment is volatile storage, cannot store keys there")
     elif kind == "exec":
         env = {**os.environb, "ACTION": "store"}
-        res = subprocess.run(rest, shell=True,
+        res = subprocess.run(rest, shell=True,                          # noqa: F841
                                    env=env,
                                    input=key.encode(),
                                    stdout=subprocess.DEVNULL,

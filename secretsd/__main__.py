@@ -74,7 +74,7 @@ def run():
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     bus = dbus.SessionBus()
     sdb = SecretsDatabase(args.db_path, args.key_location)
-    svc = SecretService(bus, sdb)
+    svc = SecretService(bus, sdb) # noqa: F841 -- automatically exported via dbus
 
     logging.debug("starting main loop")
 
