@@ -2,6 +2,7 @@ import dbus
 import dbus.service
 import logging
 
+from .exception import NoSuchObjectException
 from .util import BusObjectWithProperties, NullObject
 
 log = logging.getLogger(__name__)
