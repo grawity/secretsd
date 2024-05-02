@@ -29,11 +29,11 @@ class SecretServiceItemFallback(dbus.service.FallbackObject, BusObjectWithProper
         attrs.setdefault("xdg:schema", "org.freedesktop.Secret.Generic")
         return attrs
 
-    def set_attributes(self, path, value):
+    def set_attributes(self, path, attrs):
         if not self.service.db.item_exists(path):
             raise NoSuchObjectException(path)
         attrs["xdg:collection"] = self.get_collection(path)
-        self.service.db.set_item_attributes(path, value)
+        self.service.db.set_item_attributes(path, attrs)
 
     def get_label(self, path):
         meta = self.service.db.get_item_metadata(path)
