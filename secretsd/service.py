@@ -6,7 +6,7 @@ import itertools
 import logging
 
 from .collection import SecretServiceCollectionFallback
-from .exception import *
+from .exception import NotYetImplementedException
 from .item import SecretServiceItemFallback
 from .session import SecretServiceSession
 from .util import BusObjectWithProperties, NullObject
