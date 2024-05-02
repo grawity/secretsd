@@ -4,7 +4,6 @@ import dbus.lowlevel
 import dbus.service
 import itertools
 import logging
-import time
 
 from .collection import SecretServiceCollectionFallback
 from .exception import *
