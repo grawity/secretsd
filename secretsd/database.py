@@ -148,7 +148,8 @@ class SecretsDatabase():
             cur.execute("UPDATE attributes SET object = ? WHERE object = ?",
                         (new_object, old_object))
 
-    def _upgrade_v1_to_v3(self):
+    def _upgrade_v1_to_v4(self):
+        new_v = 4
         # Version 2 encrypts all secrets using the database master key
         cur = self.db.cursor()
         # Generate a "master key"
@@ -159,7 +160,7 @@ class SecretsDatabase():
         # Generate a "data key"
         log.info("DB: generating a data key")
         dkey = generate_key()
-        blob = self._encrypt_buf(dkey, with_mkey=True, v=3)
+        blob = self._encrypt_buf(dkey, with_mkey=True, v=new_v)
         cur.execute("INSERT INTO parameters VALUES ('dkey', ?)", (blob,))
         self.dk = dkey
         # Encrypt all currently stored secrets
@@ -167,7 +168,7 @@ class SecretsDatabase():
         res = cur.fetchall()
         for object, blob in res:
             log.info("DB: encrypting secret %r", object)
-            blob = self._encrypt_buf(blob, v=3)
+            blob = self._encrypt_buf(blob, v=new_v)
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
     def _upgrade_reencrypt(self, old_v, new_v):
@@ -191,9 +192,9 @@ class SecretsDatabase():
             blob = self._encrypt_buf(blob, v=new_v)
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
-    def _upgrade_v2_to_v3(self):
+    def _upgrade_v2_to_v4(self):
         # Version 3 uses AES-CFB128 instead of (badly chosen) AES-CFB8
-        self._upgrade_reencrypt(2, 3)
+        self._upgrade_reencrypt(2, 4)
 
     def _upgrade_v3_to_v4(self):
         # Version 4 uses AES-CBC instead of (still poorly chosen) AES-CFB128
@@ -211,11 +212,11 @@ class SecretsDatabase():
         if self.get_version() == 0:
             self._upgrade_transact(1, self._upgrade_v0_to_v1)
         if self.get_version() == 1:
-            self._upgrade_transact(3, self._upgrade_v1_to_v3)
+            self._upgrade_transact(4, self._upgrade_v1_to_v4)
             log.info("DB: vacuuming database to clean unencrypted data")
             self.db.cursor().execute("VACUUM")
         if self.get_version() == 2:
-            self._upgrade_transact(3, self._upgrade_v2_to_v3)
+            self._upgrade_transact(4, self._upgrade_v2_to_v4)
         if self.get_version() == 3:
             self._upgrade_transact(4, self._upgrade_v3_to_v4)
         self.ver = self.get_version()
