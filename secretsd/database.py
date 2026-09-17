@@ -208,14 +208,14 @@ class SecretsDatabase():
             self._upgrade_transact(1, self._upgrade_v0_to_v1)
         if self.get_version() == 1:
             self._upgrade_transact(4, self._upgrade_v1_to_v4)
-            log.info("DB: vacuuming database to clean unencrypted data")
-            self.db.cursor().execute("VACUUM")
         if self.get_version() == 2:
             self._upgrade_transact(4, self._upgrade_v2_to_v4)
         if self.get_version() == 3:
             self._upgrade_transact(4, self._upgrade_v3_to_v4)
         self.ver = self.get_version()
         if self.ver != orig_ver:
+            log.info("DB: vacuuming database")
+            self.db.cursor().execute("VACUUM")
             log.info("DB: new database version is %d", self.ver)
 
     def get_version(self):
