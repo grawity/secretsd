@@ -1,0 +1,16 @@
+[lint]
+ignore = [
+	# Don't care, the program is a single unit
+	"LOG015",	# debug() call on root logger
+
+	# All false positives (the attributes are constant)
+	"RUF012",	# Mutable default for class attribute
+
+	# Might fix but no really
+	"RUF059",	# Unpacked variable never used
+
+	# Style conventions I do not care for
+	"I001",		# Import block is un-sorted
+	"UP031",	# Use f-strings instead of percent format
+	"UP039",	# Unnecessary parens after class definition
+]

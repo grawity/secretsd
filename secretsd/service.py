@@ -133,7 +133,7 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
 
     @dbus.service.method("org.freedesktop.Secret.Service", "ao", "aoo")
     def Lock(self, objects):
-        log.warn("TODO: Service.Lock(%r)", objects)
+        log.warning("TODO: Service.Lock(%r)", objects)
         raise NotYetImplementedException()
 
     @dbus.service.method("org.freedesktop.Secret.Service", "ao", "aoo")
