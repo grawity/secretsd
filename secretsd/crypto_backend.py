@@ -67,6 +67,7 @@ elif backend == "cryptography":
     from cryptography.hazmat.primitives.hashes import SHA256
     from cryptography.hazmat.primitives.kdf.hkdf import HKDF
     from cryptography.hazmat.primitives.padding import PKCS7
+    from secrets import randbelow
 
     try:
         from cryptography.hazmat.decrepit.ciphers.modes import CFB, CFB8
@@ -112,6 +113,9 @@ elif backend == "cryptography":
     def pkcs7_unpad(data, size):
         p = PKCS7(size * 8).unpadder()
         return p.update(data) + p.finalize()
+
+    def randint(lower, upper):
+        return lower + randbelow(upper-lower+1)
 
 else:
     raise RuntimeError("unsupported crypto backend %r" % backend)
