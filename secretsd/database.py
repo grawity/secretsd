@@ -194,26 +194,23 @@ class SecretsDatabase():
         # Version 3 uses AES-CFB128 instead of (badly chosen) AES-CFB8
         self._upgrade_reencrypt(2, 3)
 
+    def _upgrade_transact(self, new_v, func):
+        log.info("DB: upgrading to version %d", new_v)
+        func()
+        self.db.cursor().execute("UPDATE version SET version = ?", (new_v,))
+        self.db.commit()
+
     def upgrade(self):
         orig_ver = self.get_version()
         log.debug("DB: current database version is %d", orig_ver)
         if self.get_version() == 0:
-            log.info("DB: upgrading to version %d", 1)
-            self._upgrade_v0_to_v1()
-            self.db.cursor().execute("UPDATE version SET version = ?", (1,))
-            self.db.commit()
+            self._upgrade_transact(1, self._upgrade_v0_to_v1)
         if self.get_version() == 1:
-            log.info("DB: upgrading to version %d", 3)
-            self._upgrade_v1_to_v3()
-            self.db.cursor().execute("UPDATE version SET version = ?", (3,))
-            self.db.commit()
-            log.info("DB: vacuuming database")
+            self._upgrade_transact(3, self._upgrade_v1_to_v3)
+            log.info("DB: vacuuming database to clean unencrypted data")
             self.db.cursor().execute("VACUUM")
         if self.get_version() == 2:
-            log.info("DB: upgrading to version %d", 3)
-            self._upgrade_v2_to_v3()
-            self.db.cursor().execute("UPDATE version SET version = ?", (3,))
-            self.db.commit()
+            self._upgrade_transact(3, self._upgrade_v2_to_v3)
         self.ver = self.get_version()
         if self.ver != orig_ver:
             log.info("DB: new database version is %d", self.ver)
