@@ -13,6 +13,13 @@ MODP1024_PRIME = int("FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1"
                      "FFFFFFFFFFFFFFFF", 16)
 MODP1024_GENERATOR = 2
 
+def generic_dh_exchange(prime, generator, peer_pubkey):
+    our_privkey = randint(1, prime-1)
+    our_pubkey = pow(generator, our_privkey, prime)
+    shared_key = pow(peer_pubkey, our_privkey, prime)
+    shared_key = shared_key.to_bytes(1024 // 8, "big")
+    return our_pubkey, shared_key
+
 backend = os.environ.get("CRYPTO_BACKEND", "cryptography")
 
 if backend == "cryptodome":
@@ -39,13 +46,7 @@ if backend == "cryptodome":
         return AES.new(key, AES.MODE_CFB, iv, segment_size=128).decrypt(data)
 
     def dh_modp1024_exchange(peer_pubkey):
-        prime = MODP1024_PRIME
-        generator = MODP1024_GENERATOR
-        our_privkey = randint(1, prime-1)
-        our_pubkey = pow(generator, our_privkey, prime)
-        shared_key = pow(peer_pubkey, our_privkey, prime)
-        shared_key = shared_key.to_bytes(1024 // 8, "big")
-        return our_pubkey, shared_key
+        return generic_dh_exchange(MODP1024_PRIME, MODP1024_GENERATOR, peer_pubkey)
 
     def hkdf_sha256_derive(input, nbytes):
         return HKDF(input, nbytes, b"", hashmod=SHA256)
