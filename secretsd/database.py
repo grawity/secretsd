@@ -4,6 +4,7 @@ import sqlite3
 import time
 
 from .encryption import (
+    IntegrityError,
     generate_key,
     aes_cbc_wrap,
     aes_cbc_unwrap,
@@ -77,7 +78,7 @@ class SecretsDatabase():
         try:
             mkey = base64.b64decode(load_ext_key(self.kp))
             if len(mkey) != 32:
-                raise IOError("wrong mkey length (expected 32 bytes)")
+                raise RuntimeError("wrong mkey length (expected 32 bytes)")
         except (KeyError, FileNotFoundError):
             raise RuntimeError("could not load the database key from %r" % (self.kp))
         log.debug("DB: database key loaded")
@@ -91,10 +92,10 @@ class SecretsDatabase():
             dkey, = cur.fetchone()
             try:
                 dkey = self._decrypt_buf(dkey, with_mkey=True, v=v)
-            except IOError as e:
-                raise IOError("failed to unwrap dkey using mkey (%s)" % e)
+            except IntegrityError as e:
+                raise RuntimeError("failed to unwrap dkey using mkey (%s)" % e)
             if len(dkey) != 32:
-                raise IOError("wrong dkey length (expected 32 bytes)")
+                raise RuntimeError("wrong dkey length (expected 32 bytes)")
             self.dk = dkey
         else:
             raise NotImplementedError("unknown schema version %r" % v)
