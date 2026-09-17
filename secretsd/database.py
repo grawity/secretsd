@@ -93,7 +93,7 @@ class SecretsDatabase():
             try:
                 dkey = self._decrypt_buf(dkey, with_mkey=True, v=v)
             except IOError as e:
-                raise IOError("wrong mkey (%s)" % e)
+                raise IOError("failed to unwrap dkey using mkey (%s)" % e)
             if len(dkey) != 32:
                 raise IOError("wrong dkey length (expected 32 bytes)")
             self.dk = dkey
