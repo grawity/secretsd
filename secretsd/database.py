@@ -5,6 +5,8 @@ import time
 
 from .encryption import (
     generate_key,
+    aes_cbc_wrap,
+    aes_cbc_unwrap,
     aes_cfb8_unwrap,
     aes_cfb128_wrap,
     aes_cfb128_unwrap,
@@ -106,7 +108,9 @@ class SecretsDatabase():
     def _encrypt_buf(self, buf, *, with_mkey=False, v=0):
         v = v or self.ver
         key = self.mk if with_mkey else self.dk
-        if v >= 3:
+        if v >= 4:
+            return aes_cbc_wrap(buf, key)
+        elif v >= 3:
             return aes_cfb128_wrap(buf, key)
         elif v == 2:
             raise NotImplementedError("encrypt_buf(v=%r) shouldn't happen anymore" % v)
@@ -116,7 +120,9 @@ class SecretsDatabase():
     def _decrypt_buf(self, buf, *, with_mkey=None, v=0):
         v = v or self.ver
         key = self.mk if with_mkey else self.dk
-        if v >= 3:
+        if v >= 4:
+            return aes_cbc_unwrap(buf, key)
+        elif v >= 3:
             return aes_cfb128_unwrap(buf, key)
         elif v == 2:
             return aes_cfb8_unwrap(buf, key)
