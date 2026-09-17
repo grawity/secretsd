@@ -170,26 +170,29 @@ class SecretsDatabase():
             blob = self._encrypt_buf(blob, v=3)
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
-    def _upgrade_v2_to_v3(self):
-        # Version 3 uses AES-CFB128 instead of (badly chosen) AES-CFB8
+    def _upgrade_reencrypt(self, old_v, new_v):
         cur = self.db.cursor()
         # Re-encrypt the data key
         self._load_mkey()
         log.info("DB: re-encrypting data key")
         cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
         blob, = cur.fetchone()
-        blob = self._decrypt_buf(blob, with_mkey=True, v=2)
-        blob = self._encrypt_buf(blob, with_mkey=True, v=3)
+        blob = self._decrypt_buf(blob, with_mkey=True, v=old_v)
+        blob = self._encrypt_buf(blob, with_mkey=True, v=new_v)
         cur.execute("UPDATE parameters SET value = ? WHERE name = 'dkey'", (blob,))
         # Re-encrypt all currently stored secrets
-        self._load_dkey(v=3)
+        self._load_dkey(v=new_v)
         cur.execute("SELECT object, secret FROM secrets")
         res = cur.fetchall()
         for object, blob in res:
             log.info("DB: re-encrypting secret %r", object)
-            blob = self._decrypt_buf(blob, v=2)
-            blob = self._encrypt_buf(blob, v=3)
+            blob = self._decrypt_buf(blob, v=old_v)
+            blob = self._encrypt_buf(blob, v=new_v)
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
+
+    def _upgrade_v2_to_v3(self):
+        # Version 3 uses AES-CFB128 instead of (badly chosen) AES-CFB8
+        self._upgrade_reencrypt(2, 3)
 
     def upgrade(self):
         orig_ver = self.get_version()
