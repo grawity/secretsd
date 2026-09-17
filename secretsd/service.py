@@ -31,6 +31,14 @@ class SecretService(dbus.service.Object, BusObjectWithProperties):
         self.fallback_collection = SecretServiceCollectionFallback(self)
         self.fallback_alias = SecretServiceCollectionFallback(self, "/org/freedesktop/secrets/aliases")
 
+        if not self.resolve_alias("default"):
+            bus_path = self.make_bus_path(True, "/org/freedesktop/secrets/collection/c%d")
+            self.db.add_collection(bus_path, "Default keyring")
+            self.db.add_alias("default", bus_path)
+
+        #if not self.resolve_alias("login"):
+        #    self.db.add_alias("login", self.resolve_alias("default"))
+
     def get_collections(self, path=None):
         collections = self.db.list_collections()
         return dbus.Array(collections, "o")
