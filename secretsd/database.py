@@ -86,7 +86,7 @@ class SecretsDatabase():
 
     def _load_dkey(self, *, v=0):
         v = v or self.ver
-        if v == 3:
+        if v >= 2:
             cur = self.db.cursor()
             cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
             dkey, = cur.fetchone()
