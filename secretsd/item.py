@@ -26,6 +26,7 @@ class SecretServiceItemFallback(dbus.service.FallbackObject, BusObjectWithProper
         attrs = self.service.db.get_item_attributes(path)
         if attrs is None:
             raise NoSuchObjectException(path)
+        del attrs["xdg:collection"]
         attrs.setdefault("xdg:schema", "org.freedesktop.Secret.Generic")
         return attrs
 
