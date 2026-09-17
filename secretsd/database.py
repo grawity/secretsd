@@ -171,6 +171,7 @@ class SecretsDatabase():
             cur.execute("UPDATE secrets SET secret = ? WHERE object = ?", (blob, object))
 
     def _upgrade_reencrypt(self, old_v, new_v):
+        assert old_v == self.get_version()
         cur = self.db.cursor()
         # Re-encrypt the data key
         self._load_mkey()
@@ -194,6 +195,10 @@ class SecretsDatabase():
         # Version 3 uses AES-CFB128 instead of (badly chosen) AES-CFB8
         self._upgrade_reencrypt(2, 3)
 
+    def _upgrade_v3_to_v4(self):
+        # Version 4 uses AES-CBC instead of (still poorly chosen) AES-CFB128
+        self._upgrade_reencrypt(3, 4)
+
     def _upgrade_transact(self, new_v, func):
         log.info("DB: upgrading to version %d", new_v)
         func()
@@ -211,6 +216,8 @@ class SecretsDatabase():
             self.db.cursor().execute("VACUUM")
         if self.get_version() == 2:
             self._upgrade_transact(3, self._upgrade_v2_to_v3)
+        if self.get_version() == 3:
+            self._upgrade_transact(4, self._upgrade_v3_to_v4)
         self.ver = self.get_version()
         if self.ver != orig_ver:
             log.info("DB: new database version is %d", self.ver)
