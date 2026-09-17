@@ -174,8 +174,8 @@ class SecretsDatabase():
         log.info("DB: re-encrypting data key")
         cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
         blob, = cur.fetchone()
-        blob = self._decrypt_buf(blob, with_mkey=True, v=old_v)
-        blob = self._encrypt_buf(blob, with_mkey=True, v=new_v)
+        dkey = self._decrypt_buf(blob, with_mkey=True, v=old_v)
+        blob = self._encrypt_buf(dkey, with_mkey=True, v=new_v)
         cur.execute("UPDATE parameters SET value = ? WHERE name = 'dkey'", (blob,))
         # Re-encrypt all currently stored secrets
         self._load_dkey(v=new_v)
