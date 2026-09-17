@@ -8,7 +8,6 @@ from .encryption import (
     aes_cbc_wrap,
     aes_cbc_unwrap,
     aes_cfb8_unwrap,
-    aes_cfb128_wrap,
     aes_cfb128_unwrap,
 )
 from .external_keys import load_ext_key, store_ext_key
@@ -110,24 +109,20 @@ class SecretsDatabase():
         key = self.mk if with_mkey else self.dk
         if v >= 4:
             return aes_cbc_wrap(buf, key)
-        elif v >= 3:
-            return aes_cfb128_wrap(buf, key)
-        elif v == 2:
-            raise NotImplementedError("encrypt_buf(v=%r) shouldn't happen anymore" % v)
         else:
-            raise NotImplementedError("unknown schema version %r" % v)
+            raise NotImplementedError("encrypting data not supported for schema v=%r" % v)
 
     def _decrypt_buf(self, buf, *, with_mkey=None, v=0):
         v = v or self.ver
         key = self.mk if with_mkey else self.dk
         if v >= 4:
             return aes_cbc_unwrap(buf, key)
-        elif v >= 3:
+        elif v == 3:
             return aes_cfb128_unwrap(buf, key)
         elif v == 2:
             return aes_cfb8_unwrap(buf, key)
         else:
-            raise NotImplementedError("unknown schema version %r" % v)
+            raise NotImplementedError("decrypting data not supported for schema v=%r" % v)
 
     # Schema upgrades
 

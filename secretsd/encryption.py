@@ -6,7 +6,6 @@ from .crypto_backend import (
     aes_cbc_encrypt,
     aes_cbc_decrypt,
     aes_cfb8_decrypt,
-    aes_cfb128_encrypt,
     aes_cfb128_decrypt,
     pkcs7_pad,
     pkcs7_unpad,
@@ -28,12 +27,6 @@ def aes_cfb8_unwrap(buf, key):
         raise IOError("MAC verification failed")
     iv, ct = buf[:AES_BLOCK_BYTES], buf[AES_BLOCK_BYTES:]
     return aes_cfb8_decrypt(ct, key, iv)
-
-def aes_cfb128_wrap(data, key):
-    iv = os.urandom(AES_BLOCK_BYTES)
-    ct = aes_cfb128_encrypt(data, key, iv)
-    buf = iv + ct
-    return sha256_hmac(buf, key) + buf
 
 def aes_cfb128_unwrap(buf, key):
     mac, buf = buf[:SHA256_HMAC_BYTES], buf[SHA256_HMAC_BYTES:]
