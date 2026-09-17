@@ -65,10 +65,16 @@ elif backend == "cryptography":
     from cryptography.hazmat.primitives.asymmetric import dh
     from cryptography.hazmat.primitives.ciphers import Cipher
     from cryptography.hazmat.primitives.ciphers.algorithms import AES
-    from cryptography.hazmat.primitives.ciphers.modes import CBC, CFB, CFB8
+    from cryptography.hazmat.primitives.ciphers.modes import CBC
     from cryptography.hazmat.primitives.hashes import SHA256
     from cryptography.hazmat.primitives.kdf.hkdf import HKDF
     from cryptography.hazmat.primitives.padding import PKCS7
+
+    try:
+        from cryptography.hazmat.decrepit.ciphers.modes import CFB, CFB8
+    except ImportError:
+        # older versions
+        from cryptography.hazmat.primitives.ciphers.modes import CFB, CFB8
 
     AES_BLOCK_BYTES = AES.block_size // 8
 
