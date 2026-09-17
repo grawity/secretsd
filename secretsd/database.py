@@ -83,19 +83,20 @@ class SecretsDatabase():
         self.mk = mkey
 
     def _load_dkey(self, *, v=0):
-        if (v or self.ver) == 3:
+        v = v or self.ver
+        if v == 3:
             cur = self.db.cursor()
             cur.execute("SELECT value FROM parameters WHERE name = 'dkey'")
             dkey, = cur.fetchone()
             try:
-                dkey = self._decrypt_buf(dkey, with_mkey=True, v=3)
+                dkey = self._decrypt_buf(dkey, with_mkey=True, v=v)
             except IOError as e:
                 raise IOError("wrong mkey (%s)" % e)
             if len(dkey) != 32:
                 raise IOError("wrong dkey length (expected 32 bytes)")
             self.dk = dkey
         else:
-            raise NotImplementedError("unknown schema version %r" % (v or self.ver))
+            raise NotImplementedError("unknown schema version %r" % v)
 
     def load_keys(self):
         if self.ver >= 2:
@@ -103,22 +104,24 @@ class SecretsDatabase():
             self._load_dkey()
 
     def _encrypt_buf(self, buf, *, with_mkey=False, v=0):
+        v = v or self.ver
         key = self.mk if with_mkey else self.dk
-        if (v or self.ver) >= 3:
+        if v >= 3:
             return aes_cfb128_wrap(buf, key)
-        elif (v or self.ver) == 2:
-            raise NotImplementedError("encrypt_buf(v=2) shouldn't happen anymore")
+        elif v == 2:
+            raise NotImplementedError("encrypt_buf(v=%r) shouldn't happen anymore" % v)
         else:
-            raise NotImplementedError("unknown schema version %r" % (v or self.ver))
+            raise NotImplementedError("unknown schema version %r" % v)
 
     def _decrypt_buf(self, buf, *, with_mkey=None, v=0):
+        v = v or self.ver
         key = self.mk if with_mkey else self.dk
-        if (v or self.ver) >= 3:
+        if v >= 3:
             return aes_cfb128_unwrap(buf, key)
-        elif (v or self.ver) == 2:
+        elif v == 2:
             return aes_cfb8_unwrap(buf, key)
         else:
-            raise NotImplementedError("unknown schema version %r" % (v or self.ver))
+            raise NotImplementedError("unknown schema version %r" % v)
 
     # Schema upgrades
 
