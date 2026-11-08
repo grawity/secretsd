@@ -60,7 +60,6 @@ if backend == "cryptodome":
 elif backend == "cryptography":
     log.debug("using crypto backend %r", "python-cryptography")
 
-    from cryptography.hazmat.primitives.asymmetric import dh
     from cryptography.hazmat.primitives.ciphers import Cipher
     from cryptography.hazmat.primitives.ciphers.algorithms import AES
     from cryptography.hazmat.primitives.ciphers.modes import CBC
@@ -94,13 +93,7 @@ elif backend == "cryptography":
         return c.update(data) + c.finalize()
 
     def dh_modp1024_exchange(peer_pubkey):
-        group = dh.DHParameterNumbers(p=MODP1024_PRIME,
-                                      g=MODP1024_GENERATOR)
-        peer_pubkey = dh.DHPublicNumbers(peer_pubkey, group).public_key()
-        our_privkey = group.parameters().generate_private_key()
-        shared_key = our_privkey.exchange(peer_pubkey)
-        our_pubkey = our_privkey.public_key().public_numbers().y
-        return our_pubkey, shared_key
+        return generic_dh_exchange(MODP1024_PRIME, MODP1024_GENERATOR, peer_pubkey)
 
     def hkdf_sha256_derive(input, nbytes):
         k = HKDF(algorithm=SHA256(), length=nbytes, salt=b"", info=b"")
